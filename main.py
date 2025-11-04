@@ -300,36 +300,44 @@ async def post(session_id: str, message: str):
     conversation = get_conversation(session_id)
 
     # System prompt explaining MUI tags
-    system_prompt = """You can create interactive UI elements in your responses using <mui> tags.
+    system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
 
-IMPORTANT: Whenever you present multiple choice options, questions, or selections, you MUST use <mui> tags to create clickable buttons.
-
-Available components:
-1. Buttons: <mui type="buttons"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
-2. Cards with buttons: <mui type="card"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
-
-Required usage:
-- ALL multiple choice questions MUST have <mui> button options
-- ALL quiz questions MUST have <mui> button options
-- ALL selection prompts MUST have <mui> button options
-
-Example:
-"Which programming language would you like to learn?
+How to create buttons:
 <mui type="buttons">
-<option value="python">Python</option>
-<option value="javascript">JavaScript</option>
-<option value="rust">Rust</option>
-</mui>"
+<option value="answer1">Label 1</option>
+<option value="answer2">Label 2</option>
+</mui>
 
-Quiz example:
-"Question 1: What is 2+2?
+MULTI-QUESTION QUIZ FORMAT - FOLLOW THIS EXACTLY:
+Question 1: What is 2+2?
 <mui type="buttons">
 <option value="3">3</option>
 <option value="4">4</option>
 <option value="5">5</option>
-</mui>"
+<option value="6">6</option>
+</mui>
 
-When a user clicks a button, the value will be sent as their message. Keep button labels concise and clear."""
+Question 2: What is Python?
+<mui type="buttons">
+<option value="snake">A snake</option>
+<option value="language">A programming language</option>
+<option value="food">A food</option>
+<option value="game">A game</option>
+</mui>
+
+Question 3: What does print() do?
+<mui type="buttons">
+<option value="prints">Prints to console</option>
+<option value="saves">Saves a file</option>
+<option value="deletes">Deletes data</option>
+<option value="calculates">Calculates math</option>
+</mui>
+
+RULES:
+1. EVERY question MUST have <mui> buttons immediately after the question text
+2. NO question should be without buttons
+3. When creating multiple questions, EACH ONE needs its own <mui> button group
+4. Do NOT skip any questions - they ALL need buttons"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -402,36 +410,44 @@ async def post(session_id: str, message: str):
     conversation = get_conversation(session_id)
 
     # System prompt explaining MUI tags
-    system_prompt = """You can create interactive UI elements in your responses using <mui> tags.
+    system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
 
-IMPORTANT: Whenever you present multiple choice options, questions, or selections, you MUST use <mui> tags to create clickable buttons.
-
-Available components:
-1. Buttons: <mui type="buttons"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
-2. Cards with buttons: <mui type="card"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
-
-Required usage:
-- ALL multiple choice questions MUST have <mui> button options
-- ALL quiz questions MUST have <mui> button options
-- ALL selection prompts MUST have <mui> button options
-
-Example:
-"Which programming language would you like to learn?
+How to create buttons:
 <mui type="buttons">
-<option value="python">Python</option>
-<option value="javascript">JavaScript</option>
-<option value="rust">Rust</option>
-</mui>"
+<option value="answer1">Label 1</option>
+<option value="answer2">Label 2</option>
+</mui>
 
-Quiz example:
-"Question 1: What is 2+2?
+MULTI-QUESTION QUIZ FORMAT - FOLLOW THIS EXACTLY:
+Question 1: What is 2+2?
 <mui type="buttons">
 <option value="3">3</option>
 <option value="4">4</option>
 <option value="5">5</option>
-</mui>"
+<option value="6">6</option>
+</mui>
 
-When a user clicks a button, the value will be sent as their message. Keep button labels concise and clear."""
+Question 2: What is Python?
+<mui type="buttons">
+<option value="snake">A snake</option>
+<option value="language">A programming language</option>
+<option value="food">A food</option>
+<option value="game">A game</option>
+</mui>
+
+Question 3: What does print() do?
+<mui type="buttons">
+<option value="prints">Prints to console</option>
+<option value="saves">Saves a file</option>
+<option value="deletes">Deletes data</option>
+<option value="calculates">Calculates math</option>
+</mui>
+
+RULES:
+1. EVERY question MUST have <mui> buttons immediately after the question text
+2. NO question should be without buttons
+3. When creating multiple questions, EACH ONE needs its own <mui> button group
+4. Do NOT skip any questions - they ALL need buttons"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
