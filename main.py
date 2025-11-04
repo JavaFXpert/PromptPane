@@ -374,6 +374,58 @@ def generate_mui_image(tag_info, session_id):
         cls="my-4 p-4 border border-border rounded-lg"
     )
 
+def generate_mui_video(tag_info, session_id):
+    """Generate MonsterUI YouTube video embed component"""
+    attrs = tag_info['attrs']
+    url = attrs.get('url', '')
+    caption = attrs.get('caption', '')
+
+    if not url:
+        return Div("Error: No video URL provided", cls="text-error")
+
+    # Extract YouTube video ID from various URL formats
+    video_id = None
+    import re
+
+    # Match youtube.com/watch?v=VIDEO_ID
+    match = re.search(r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
+    if match:
+        video_id = match.group(1)
+
+    if not video_id:
+        return Div("Error: Invalid YouTube URL", cls="text-error")
+
+    embed_url = f"https://www.youtube.com/embed/{video_id}"
+
+    video_components = []
+
+    # Responsive iframe container
+    video_components.append(
+        Div(
+            Iframe(
+                src=embed_url,
+                width="560",
+                height="315",
+                frameborder="0",
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+                allowfullscreen=True,
+                cls="w-full aspect-video rounded-lg"
+            ),
+            cls="relative w-full"
+        )
+    )
+
+    # Optional caption
+    if caption:
+        video_components.append(
+            P(caption, cls="text-sm text-muted-foreground text-center mt-2")
+        )
+
+    return Div(
+        *video_components,
+        cls="my-4 p-4 border border-border rounded-lg"
+    )
+
 
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
@@ -395,6 +447,8 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_toggle(tag_info, session_id)
     elif component_type == 'image':
         return generate_mui_image(tag_info, session_id)
+    elif component_type == 'video':
+        return generate_mui_video(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
@@ -684,6 +738,18 @@ Use images when:
 - The src attribute is required and must be a valid image URL
 - The caption attribute is optional
 
+VIDEO: To embed YouTube videos:
+<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Optional caption">
+</mui>
+
+Use videos when:
+- Demonstrating concepts with video tutorials
+- Showing examples or walkthroughs
+- Providing educational or explanatory content
+- The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
+- Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
+- The caption attribute is optional
+
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
 How to create buttons:
@@ -895,6 +961,18 @@ Use images when:
 - Providing visual context or explanations
 - Displaying examples, screenshots, or illustrations
 - The src attribute is required and must be a valid image URL
+- The caption attribute is optional
+
+VIDEO: To embed YouTube videos:
+<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Optional caption">
+</mui>
+
+Use videos when:
+- Demonstrating concepts with video tutorials
+- Showing examples or walkthroughs
+- Providing educational or explanatory content
+- The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
+- Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
 - The caption attribute is optional
 
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
