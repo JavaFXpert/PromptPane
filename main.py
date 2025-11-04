@@ -256,6 +256,54 @@ def generate_mui_checkboxes(tag_info, session_id):
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
     )
 
+def generate_mui_rating(tag_info, session_id):
+    """Generate MonsterUI star rating component"""
+    attrs = tag_info['attrs']
+    label = attrs.get('label', '')
+    max_rating = int(attrs.get('max', '5'))
+
+    # Generate unique ID for this rating
+    import time
+    rating_id = f"rating-{int(time.time() * 1000000)}"
+
+    # Create star radio buttons in normal order (1 to max)
+    stars = []
+    for i in range(1, max_rating + 1):
+        stars.append(
+            Input(
+                type="radio",
+                name=rating_id,
+                value=str(i),
+                cls="mask mask-star-2 bg-orange-400",
+                id=f"{rating_id}-{i}"
+            )
+        )
+
+    return Div(
+        # Label
+        Label(label, cls="font-semibold mb-2") if label else None,
+
+        # Rating stars
+        Div(
+            *stars,
+            cls="rating rating-lg mb-3"
+        ),
+
+        # Submit button
+        Button(
+            "Submit Rating",
+            cls=ButtonT.primary,
+            hx_post=f"/send-button/{session_id}",
+            hx_vals=f"""js:{{
+                message: document.querySelector('input[name="{rating_id}"]:checked')?.value || 'no rating selected'
+            }}""",
+            hx_target="#chat-messages",
+            hx_swap="innerHTML"
+        ),
+
+        cls="space-y-2 my-4 p-4 border border-border rounded-lg"
+    )
+
 
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
@@ -271,6 +319,8 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_slider(tag_info, session_id)
     elif component_type == 'checkboxes':
         return generate_mui_checkboxes(tag_info, session_id)
+    elif component_type == 'rating':
+        return generate_mui_rating(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
@@ -530,6 +580,15 @@ Use checkboxes when:
 - Questions ask "select all that apply" or "which of the following"
 - More than one option can be true
 
+RATING: For star ratings and satisfaction scores:
+<mui type="rating" label="How would you rate this movie?" max="5">
+</mui>
+
+Use ratings when:
+- Asking for subjective quality/satisfaction ratings
+- Reviews, feedback, or opinions on a scale
+- The max attribute sets the number of stars (default is 5)
+
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
 How to create buttons:
@@ -567,8 +626,9 @@ RULES:
 1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
 2. For questions with multiple correct answers, use checkboxes instead of buttons
 3. For numeric answers in a range, use sliders
-4. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-5. When creating multiple questions, EACH ONE needs its own <mui> component"""
+4. For rating/satisfaction questions, use the rating component with stars
+5. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+6. When creating multiple questions, EACH ONE needs its own <mui> component"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -711,6 +771,15 @@ Use checkboxes when:
 - Questions ask "select all that apply" or "which of the following"
 - More than one option can be true
 
+RATING: For star ratings and satisfaction scores:
+<mui type="rating" label="How would you rate this movie?" max="5">
+</mui>
+
+Use ratings when:
+- Asking for subjective quality/satisfaction ratings
+- Reviews, feedback, or opinions on a scale
+- The max attribute sets the number of stars (default is 5)
+
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
 How to create buttons:
@@ -748,8 +817,9 @@ RULES:
 1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
 2. For questions with multiple correct answers, use checkboxes instead of buttons
 3. For numeric answers in a range, use sliders
-4. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-5. When creating multiple questions, EACH ONE needs its own <mui> component"""
+4. For rating/satisfaction questions, use the rating component with stars
+5. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+6. When creating multiple questions, EACH ONE needs its own <mui> component"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
