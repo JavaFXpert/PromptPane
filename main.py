@@ -18,7 +18,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Create FastHTML app with MonsterUI theme
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(highlightjs=True),
+    hdrs=Theme.blue.headers(highlightjs=True, katex=True),
     live=True
 )
 
@@ -302,6 +302,11 @@ async def post(session_id: str, message: str):
     # System prompt explaining MUI tags
     system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
 
+LATEX SUPPORT: You can use LaTeX for mathematical formulas:
+- Inline math: $E = mc^2$ or \\(E = mc^2\\)
+- Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
+Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
+
 How to create buttons:
 <mui type="buttons">
 <option value="answer1">Label 1</option>
@@ -411,6 +416,11 @@ async def post(session_id: str, message: str):
 
     # System prompt explaining MUI tags
     system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
+
+LATEX SUPPORT: You can use LaTeX for mathematical formulas:
+- Inline math: $E = mc^2$ or \\(E = mc^2\\)
+- Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
+Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
 
 How to create buttons:
 <mui type="buttons">
