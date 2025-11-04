@@ -34,7 +34,7 @@ katex_autorender = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/co
 
 # Create FastHTML app with MonsterUI theme
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(highlightjs=True, katex=True) + (katex_autorender,),
+    hdrs=Theme.blue.headers(highlightjs=True, katex=True) + [katex_autorender],
     live=True
 )
 
