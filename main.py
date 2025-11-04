@@ -204,6 +204,59 @@ def generate_mui_slider(tag_info, session_id):
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
     )
 
+def generate_mui_checkboxes(tag_info, session_id):
+    """Generate MonsterUI checkbox group component"""
+    options = tag_info['options']
+    attrs = tag_info['attrs']
+    label = attrs.get('label', '')
+
+    # Generate unique ID for this checkbox group
+    group_id = f"checkbox-group-{abs(hash(str(tag_info)))}"
+
+    checkbox_items = []
+    for i, opt in enumerate(options):
+        checkbox_id = f"{group_id}-{i}"
+        opt_label = opt['label'] or opt['value']
+
+        checkbox_items.append(
+            Div(
+                Input(
+                    type="checkbox",
+                    id=checkbox_id,
+                    value=opt['value'],
+                    name=group_id,
+                    cls="checkbox checkbox-primary w-5 h-5 cursor-pointer"
+                ),
+                Label(opt_label, **{"for": checkbox_id}, cls="cursor-pointer ml-2"),
+                cls="flex items-center gap-2 p-2 hover:bg-muted rounded"
+            )
+        )
+
+    return Div(
+        # Label
+        Label(label, cls="font-semibold mb-3") if label else None,
+
+        # Checkboxes
+        Div(*checkbox_items, cls="space-y-2 mb-4"),
+
+        # Submit button
+        Button(
+            "Submit Answers",
+            cls=ButtonT.primary,
+            hx_post=f"/send-button/{session_id}",
+            hx_vals=f"""js:{{
+                message: Array.from(document.querySelectorAll('input[name="{group_id}"]:checked'))
+                    .map(cb => cb.value)
+                    .join(', ') || 'none selected'
+            }}""",
+            hx_target="#chat-messages",
+            hx_swap="innerHTML"
+        ),
+
+        cls="space-y-2 my-4 p-4 border border-border rounded-lg"
+    )
+
+
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
     component_type = tag_info['type']
@@ -216,6 +269,8 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_card(options, content, session_id)
     elif component_type == 'slider':
         return generate_mui_slider(tag_info, session_id)
+    elif component_type == 'checkboxes':
+        return generate_mui_checkboxes(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
@@ -462,6 +517,21 @@ Use sliders when:
 - You want the user to select an integer value
 - The question asks for numeric input (not multiple choice text)
 
+CHECKBOXES: For "select all that apply" questions where multiple answers can be selected:
+<mui type="checkboxes" label="Which of these are programming languages?">
+<option value="python">Python</option>
+<option value="html">HTML</option>
+<option value="javascript">JavaScript</option>
+<option value="css">CSS</option>
+</mui>
+
+Use checkboxes when:
+- The user can select multiple correct answers
+- Questions ask "select all that apply" or "which of the following"
+- More than one option can be true
+
+FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
+
 How to create buttons:
 <mui type="buttons">
 <option value="answer1">Label 1</option>
@@ -494,10 +564,11 @@ Question 3: What does print() do?
 </mui>
 
 RULES:
-1. EVERY question MUST have <mui> buttons immediately after the question text
-2. NO question should be without buttons
-3. When creating multiple questions, EACH ONE needs its own <mui> button group
-4. Do NOT skip any questions - they ALL need buttons"""
+1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
+2. For questions with multiple correct answers, use checkboxes instead of buttons
+3. For numeric answers in a range, use sliders
+4. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+5. When creating multiple questions, EACH ONE needs its own <mui> component"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -565,6 +636,12 @@ RULES:
                 if (anchor) {
                     anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }
+
+                // Refocus main input
+                const mainInput = document.getElementById('message-input');
+                if (mainInput) {
+                    mainInput.focus();
+                }
             }, 200);
         }, 100);
     """)
@@ -621,6 +698,21 @@ Use sliders when:
 - You want the user to select an integer value
 - The question asks for numeric input (not multiple choice text)
 
+CHECKBOXES: For "select all that apply" questions where multiple answers can be selected:
+<mui type="checkboxes" label="Which of these are programming languages?">
+<option value="python">Python</option>
+<option value="html">HTML</option>
+<option value="javascript">JavaScript</option>
+<option value="css">CSS</option>
+</mui>
+
+Use checkboxes when:
+- The user can select multiple correct answers
+- Questions ask "select all that apply" or "which of the following"
+- More than one option can be true
+
+FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
+
 How to create buttons:
 <mui type="buttons">
 <option value="answer1">Label 1</option>
@@ -653,10 +745,11 @@ Question 3: What does print() do?
 </mui>
 
 RULES:
-1. EVERY question MUST have <mui> buttons immediately after the question text
-2. NO question should be without buttons
-3. When creating multiple questions, EACH ONE needs its own <mui> button group
-4. Do NOT skip any questions - they ALL need buttons"""
+1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
+2. For questions with multiple correct answers, use checkboxes instead of buttons
+3. For numeric answers in a range, use sliders
+4. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+5. When creating multiple questions, EACH ONE needs its own <mui> component"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -721,6 +814,12 @@ RULES:
                 const anchor = document.getElementById('scroll-anchor');
                 if (anchor) {
                     anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+
+                // Refocus main input
+                const mainInput = document.getElementById('message-input');
+                if (mainInput) {
+                    mainInput.focus();
                 }
             }, 200);
         }, 100);
