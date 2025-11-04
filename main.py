@@ -16,9 +16,25 @@ load_dotenv()
 # Initialize Groq client
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
+# KaTeX auto-render script for LaTeX support
+katex_autorender = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js",
+                          integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05",
+                          crossorigin="anonymous",
+                          onload="""
+                          renderMathInElement(document.body, {
+                            delimiters: [
+                              {left: '$$', right: '$$', display: true},
+                              {left: '$', right: '$', display: false},
+                              {left: '\\\\[', right: '\\\\]', display: true},
+                              {left: '\\\\(', right: '\\\\)', display: false}
+                            ],
+                            throwOnError: false
+                          });
+                          """)
+
 # Create FastHTML app with MonsterUI theme
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(highlightjs=True, katex=True),
+    hdrs=Theme.blue.headers(highlightjs=True, katex=True) + (katex_autorender,),
     live=True
 )
 
@@ -377,6 +393,20 @@ RULES:
     scroll_anchor = Div(id="scroll-anchor")
     scroll_script = Script("""
         setTimeout(() => {
+            // Render LaTeX with KaTeX
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.getElementById('chat-messages'), {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\\\[', right: '\\\\]', display: true},
+                        {left: '\\\\(', right: '\\\\)', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            // Scroll to bottom
             const anchor = document.getElementById('scroll-anchor');
             if (anchor) {
                 anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -490,6 +520,20 @@ RULES:
     scroll_anchor = Div(id="scroll-anchor")
     scroll_script = Script("""
         setTimeout(() => {
+            // Render LaTeX with KaTeX
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.getElementById('chat-messages'), {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\\\[', right: '\\\\]', display: true},
+                        {left: '\\\\(', right: '\\\\)', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            // Scroll to bottom
             const anchor = document.getElementById('scroll-anchor');
             if (anchor) {
                 anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
