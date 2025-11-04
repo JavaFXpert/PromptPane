@@ -130,6 +130,80 @@ def generate_mui_card(options, content, session_id):
         cls="my-2"
     )
 
+def generate_mui_slider(tag_info, session_id):
+    """Generate MonsterUI slider component"""
+    attrs = tag_info['attrs']
+    min_val = int(attrs.get('min', '0'))
+    max_val = int(attrs.get('max', '100'))
+    step = int(attrs.get('step', '1'))
+    default_val = int(attrs.get('value', str((min_val + max_val) // 2)))
+    label = attrs.get('label', '')
+
+    # Generate unique ID for this slider
+    slider_id = f"slider-{abs(hash(str(tag_info)))}"
+
+    # Calculate tick marks (show at intervals)
+    range_size = max_val - min_val
+    tick_interval = max(1, range_size // 10)  # Show ~10 ticks
+    ticks = list(range(min_val, max_val + 1, tick_interval))
+
+    # Create datalist for tick marks
+    datalist_id = f"{slider_id}-ticks"
+    tick_options = [Option(value=str(tick)) for tick in ticks]
+    datalist = Datalist(*tick_options, id=datalist_id)
+
+    return Div(
+        # Label
+        Label(label, cls="font-semibold mb-2") if label else None,
+
+        # Slider with end labels
+        Div(
+            # Min label
+            Span(str(min_val), cls="text-sm text-muted-foreground"),
+
+            # Slider itself
+            Div(
+                Input(
+                    type="range",
+                    id=slider_id,
+                    min=str(min_val),
+                    max=str(max_val),
+                    step=str(step),
+                    value=str(default_val),
+                    list=datalist_id,
+                    oninput=f"document.getElementById('{slider_id}-value').textContent = this.value",
+                    cls="w-full"
+                ),
+                datalist,
+                cls="flex-1 px-4"
+            ),
+
+            # Max label
+            Span(str(max_val), cls="text-sm text-muted-foreground"),
+
+            cls="flex items-center gap-2 mb-3"
+        ),
+
+        # Current value display
+        Div(
+            Span("Selected value: ", cls=TextT.muted),
+            Span(str(default_val), id=f"{slider_id}-value", cls="font-bold text-lg"),
+            cls="text-center mb-3"
+        ),
+
+        # Submit button
+        Button(
+            "Submit Answer",
+            cls=ButtonT.primary,
+            hx_post=f"/send-button/{session_id}",
+            hx_vals=f"js:{{message: document.getElementById('{slider_id}').value}}",
+            hx_target="#chat-messages",
+            hx_swap="innerHTML"
+        ),
+
+        cls="space-y-2 my-4 p-4 border border-border rounded-lg"
+    )
+
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
     component_type = tag_info['type']
@@ -140,6 +214,8 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_button_group(options, session_id)
     elif component_type == 'card':
         return generate_mui_card(options, content, session_id)
+    elif component_type == 'slider':
+        return generate_mui_slider(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
@@ -372,6 +448,20 @@ LATEX SUPPORT: You can use LaTeX for mathematical formulas:
 - Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
 Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
 
+SLIDER INPUT: For numeric answers where user selects from a range, use sliders:
+<mui type="slider" min="0" max="100" step="1" value="50" label="Your question here">
+</mui>
+
+Slider example:
+"What number do you get when you add 27 and 15?
+<mui type="slider" min="0" max="100" step="1" value="40" label="Use the slider to select your answer:">
+</mui>"
+
+Use sliders when:
+- The answer is a number in a specific range
+- You want the user to select an integer value
+- The question asks for numeric input (not multiple choice text)
+
 How to create buttons:
 <mui type="buttons">
 <option value="answer1">Label 1</option>
@@ -516,6 +606,20 @@ LATEX SUPPORT: You can use LaTeX for mathematical formulas:
 - Inline math: $E = mc^2$ or \\(E = mc^2\\)
 - Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
 Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
+
+SLIDER INPUT: For numeric answers where user selects from a range, use sliders:
+<mui type="slider" min="0" max="100" step="1" value="50" label="Your question here">
+</mui>
+
+Slider example:
+"What number do you get when you add 27 and 15?
+<mui type="slider" min="0" max="100" step="1" value="40" label="Use the slider to select your answer:">
+</mui>"
+
+Use sliders when:
+- The answer is a number in a specific range
+- You want the user to select an integer value
+- The question asks for numeric input (not multiple choice text)
 
 How to create buttons:
 <mui type="buttons">
