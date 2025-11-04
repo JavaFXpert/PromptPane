@@ -6,6 +6,9 @@ import os
 from groq import Groq
 from datetime import datetime
 from dotenv import load_dotenv
+import re
+from html.parser import HTMLParser
+from io import StringIO
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,7 +41,122 @@ def add_message(session_id, role, content):
     })
     return conversation
 
-def ChatMessage(role, content, timestamp=None):
+class MUITagParser(HTMLParser):
+    """Parse <mui> tags and extract their content"""
+    def __init__(self):
+        super().__init__()
+        self.mui_tags = []
+        self.current_tag = None
+        self.tag_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'mui':
+            attrs_dict = dict(attrs)
+            self.current_tag = {
+                'type': attrs_dict.get('type', 'buttons'),
+                'attrs': attrs_dict,
+                'options': [],
+                'content': ''
+            }
+            self.tag_depth = 1
+        elif self.current_tag and tag == 'option':
+            attrs_dict = dict(attrs)
+            self.current_tag['options'].append({
+                'value': attrs_dict.get('value', ''),
+                'label': '',
+                'attrs': attrs_dict
+            })
+
+    def handle_endtag(self, tag):
+        if tag == 'mui' and self.current_tag:
+            self.tag_depth -= 1
+            if self.tag_depth == 0:
+                self.mui_tags.append(self.current_tag)
+                self.current_tag = None
+
+    def handle_data(self, data):
+        if self.current_tag:
+            # Add data to the last option if we have options
+            if self.current_tag['options']:
+                self.current_tag['options'][-1]['label'] += data.strip()
+
+def parse_mui_tags(content):
+    """Extract MUI tags from content and return tags and cleaned content"""
+    parser = MUITagParser()
+    parser.feed(content)
+    return parser.mui_tags, content
+
+def generate_mui_button_group(options, session_id):
+    """Generate MonsterUI button group from options"""
+    buttons = []
+    for opt in options:
+        label = opt['label'] or opt['value']
+        # Create button that sends message via HTMX
+        btn = Button(
+            label,
+            cls=ButtonT.primary + " mui-button",
+            hx_post=f"/send-button/{session_id}",
+            hx_vals=f'{{"message": "{opt["value"]}"}}',
+            hx_target="#chat-messages",
+            hx_swap="innerHTML"
+        )
+        buttons.append(btn)
+
+    return DivLAligned(*buttons, cls="gap-2 flex-wrap my-2")
+
+def generate_mui_card(options, content, session_id):
+    """Generate MonsterUI card containing other components"""
+    # Generate nested components if any
+    inner_components = []
+    if options:
+        inner_components.append(generate_mui_button_group(options, session_id))
+
+    return Card(
+        *inner_components,
+        cls="my-2"
+    )
+
+def generate_mui_component(tag_info, session_id):
+    """Generate MonsterUI component from parsed tag"""
+    component_type = tag_info['type']
+    options = tag_info['options']
+    content = tag_info['content']
+
+    if component_type == 'buttons':
+        return generate_mui_button_group(options, session_id)
+    elif component_type == 'card':
+        return generate_mui_card(options, content, session_id)
+    else:
+        # Unknown type, return empty div
+        return Div()
+
+def process_mui_tags(content, session_id):
+    """Process MUI tags in content and return components + cleaned markdown"""
+    # Find all MUI tags with regex to get positions
+    mui_pattern = r'<mui[^>]*>.*?</mui>'
+    matches = list(re.finditer(mui_pattern, content, re.DOTALL))
+
+    if not matches:
+        return [], content
+
+    # Parse the tags
+    mui_tags, _ = parse_mui_tags(content)
+
+    # Build components and create placeholders (use HTML comments that markdown preserves)
+    components = []
+    result_content = content
+
+    for i, (match, tag_info) in enumerate(zip(reversed(matches), reversed(mui_tags))):
+        component = generate_mui_component(tag_info, session_id)
+        components.insert(0, component)
+
+        # Replace the MUI tag with an HTML comment placeholder
+        placeholder = f"<!--MUI_COMPONENT_{i}-->"
+        result_content = result_content[:match.start()] + placeholder + result_content[match.end():]
+
+    return components, result_content
+
+def ChatMessage(role, content, timestamp=None, session_id="default"):
     """Render a chat message bubble"""
     is_user = role == "user"
 
@@ -56,9 +174,33 @@ def ChatMessage(role, content, timestamp=None):
     if is_user:
         message_body = Div(content, cls=f"rounded-lg p-4 max-w-2xl {message_cls}")
     else:
+        # Process MUI tags first
+        mui_components, cleaned_content = process_mui_tags(content, session_id)
+
         # Render markdown with MonsterUI styling
-        rendered_md = render_md(content)
-        message_body = Div(Safe(rendered_md), cls=f"rounded-lg p-4 max-w-2xl {message_cls}")
+        rendered_md = render_md(cleaned_content)
+
+        # Split rendered markdown by HTML comment placeholders and interleave with components
+        content_parts = []
+        remaining = rendered_md
+
+        for i, component in enumerate(mui_components):
+            placeholder = f"<!--MUI_COMPONENT_{i}-->"
+            if placeholder in remaining:
+                before, remaining = remaining.split(placeholder, 1)
+                if before.strip():
+                    content_parts.append(Safe(before))
+                content_parts.append(component)
+
+        # Add any remaining content
+        if remaining.strip():
+            content_parts.append(Safe(remaining))
+
+        # If no MUI components, just show rendered markdown
+        if not content_parts:
+            content_parts = [Safe(rendered_md)]
+
+        message_body = Div(*content_parts, cls=f"rounded-lg p-4 max-w-2xl {message_cls}")
 
     message_content = DivLAligned(
         avatar if not is_user else None,
@@ -79,7 +221,7 @@ def ChatInterface(session_id="default"):
 
     # Chat messages container
     messages = Div(
-        *[ChatMessage(msg["role"], msg["content"], msg.get("timestamp"))
+        *[ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
           for msg in conversation],
         Div(id="scroll-anchor"),
         id="chat-messages",
@@ -148,7 +290,7 @@ async def post(session_id: str, message: str):
     """Handle chat message submission"""
     if not message.strip():
         conversation = get_conversation(session_id)
-        return [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"))
+        return [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
                 for msg in conversation]
 
     # Add user message
@@ -156,9 +298,32 @@ async def post(session_id: str, message: str):
 
     # Get conversation history for context
     conversation = get_conversation(session_id)
+
+    # System prompt explaining MUI tags
+    system_prompt = """You can create interactive UI elements in your responses using <mui> tags.
+
+Available components:
+1. Buttons: <mui type="buttons"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
+2. Cards with buttons: <mui type="card"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
+
+When a user clicks a button, the value will be sent as their message. Use these for:
+- Multiple choice questions
+- Quick actions or commands
+- Option selection
+
+Example:
+"Which programming language would you like to learn?
+<mui type="buttons">
+<option value="python">Python</option>
+<option value="javascript">JavaScript</option>
+<option value="rust">Rust</option>
+</mui>"
+
+The MUI tags will be rendered as interactive buttons. Keep button labels concise and clear."""
+
     messages_for_api = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in conversation
+        {"role": "system", "content": system_prompt},
+        *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
     try:
@@ -182,7 +347,7 @@ async def post(session_id: str, message: str):
 
     # Return updated conversation with scroll anchor
     conversation = get_conversation(session_id)
-    messages = [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"))
+    messages = [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
                 for msg in conversation]
 
     # Add a scroll anchor at the bottom
@@ -216,6 +381,77 @@ def post(session_id: str):
         ),
         cls="flex items-center justify-center h-full"
     )
+
+@rt("/send-button/{session_id}")
+async def post(session_id: str, message: str):
+    """Handle button click - sends the button value as a message"""
+    # Add user message (button value)
+    add_message(session_id, "user", message)
+
+    # Get conversation history
+    conversation = get_conversation(session_id)
+
+    # System prompt explaining MUI tags
+    system_prompt = """You can create interactive UI elements in your responses using <mui> tags.
+
+Available components:
+1. Buttons: <mui type="buttons"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
+2. Cards with buttons: <mui type="card"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
+
+When a user clicks a button, the value will be sent as their message. Use these for:
+- Multiple choice questions
+- Quick actions or commands
+- Option selection
+
+Example:
+"Which programming language would you like to learn?
+<mui type="buttons">
+<option value="python">Python</option>
+<option value="javascript">JavaScript</option>
+<option value="rust">Rust</option>
+</mui>"
+
+The MUI tags will be rendered as interactive buttons. Keep button labels concise and clear."""
+
+    messages_for_api = [
+        {"role": "system", "content": system_prompt},
+        *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
+    ]
+
+    try:
+        # Call Groq API
+        chat_completion = client.chat.completions.create(
+            messages=messages_for_api,
+            model="openai/gpt-oss-120b",
+            temperature=0.7,
+            max_tokens=1024,
+            tools=[{"type":"browser_search"},{"type":"code_interpreter"}]
+        )
+
+        assistant_message = chat_completion.choices[0].message.content
+        add_message(session_id, "assistant", assistant_message)
+
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        add_message(session_id, "assistant", error_msg)
+
+    # Return updated conversation with scroll anchor
+    conversation = get_conversation(session_id)
+    messages = [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
+                for msg in conversation]
+
+    # Add a scroll anchor at the bottom
+    scroll_anchor = Div(id="scroll-anchor")
+    scroll_script = Script("""
+        setTimeout(() => {
+            const anchor = document.getElementById('scroll-anchor');
+            if (anchor) {
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        }, 100);
+    """)
+
+    return messages + [scroll_anchor, scroll_script]
 
 if __name__ == "__main__":
     serve(port=5001)
