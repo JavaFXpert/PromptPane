@@ -302,14 +302,16 @@ async def post(session_id: str, message: str):
     # System prompt explaining MUI tags
     system_prompt = """You can create interactive UI elements in your responses using <mui> tags.
 
+IMPORTANT: Whenever you present multiple choice options, questions, or selections, you MUST use <mui> tags to create clickable buttons.
+
 Available components:
 1. Buttons: <mui type="buttons"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
 2. Cards with buttons: <mui type="card"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
 
-When a user clicks a button, the value will be sent as their message. Use these for:
-- Multiple choice questions
-- Quick actions or commands
-- Option selection
+Required usage:
+- ALL multiple choice questions MUST have <mui> button options
+- ALL quiz questions MUST have <mui> button options
+- ALL selection prompts MUST have <mui> button options
 
 Example:
 "Which programming language would you like to learn?
@@ -319,7 +321,15 @@ Example:
 <option value="rust">Rust</option>
 </mui>"
 
-The MUI tags will be rendered as interactive buttons. Keep button labels concise and clear."""
+Quiz example:
+"Question 1: What is 2+2?
+<mui type="buttons">
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+</mui>"
+
+When a user clicks a button, the value will be sent as their message. Keep button labels concise and clear."""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -394,14 +404,16 @@ async def post(session_id: str, message: str):
     # System prompt explaining MUI tags
     system_prompt = """You can create interactive UI elements in your responses using <mui> tags.
 
+IMPORTANT: Whenever you present multiple choice options, questions, or selections, you MUST use <mui> tags to create clickable buttons.
+
 Available components:
 1. Buttons: <mui type="buttons"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
 2. Cards with buttons: <mui type="card"><option value="choice1">Label 1</option><option value="choice2">Label 2</option></mui>
 
-When a user clicks a button, the value will be sent as their message. Use these for:
-- Multiple choice questions
-- Quick actions or commands
-- Option selection
+Required usage:
+- ALL multiple choice questions MUST have <mui> button options
+- ALL quiz questions MUST have <mui> button options
+- ALL selection prompts MUST have <mui> button options
 
 Example:
 "Which programming language would you like to learn?
@@ -411,7 +423,15 @@ Example:
 <option value="rust">Rust</option>
 </mui>"
 
-The MUI tags will be rendered as interactive buttons. Keep button labels concise and clear."""
+Quiz example:
+"Question 1: What is 2+2?
+<mui type="buttons">
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+</mui>"
+
+When a user clicks a button, the value will be sent as their message. Keep button labels concise and clear."""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
