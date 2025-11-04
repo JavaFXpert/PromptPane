@@ -105,14 +105,67 @@ def generate_mui_button_group(options, session_id):
     buttons = []
     for opt in options:
         label = opt['label'] or opt['value']
-        # Create button that sends message via HTMX
+        value = opt['value']
+        # Create button that sends message via HTMX with optimistic UI
         btn = Button(
             label,
             cls=ButtonT.primary + " mui-button",
             hx_post=f"/send-button/{session_id}",
-            hx_vals=f'{{"message": "{opt["value"]}"}}',
-            hx_target="#chat-messages",
-            hx_swap="innerHTML"
+            hx_vals=f'{{"message": "{value}"}}',
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap="""
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) loadingIndicator.remove();
+                if (typeof renderMathInElement !== 'undefined') {
+                    try {
+                        renderMathInElement(document.getElementById('chat-messages'), {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                            throwOnError: false
+                        });
+                    } catch(e) {}
+                }
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) mainInput.focus();
+                }, 100);
+            """,
+            onclick=f"""
+                const msg = '{value}';
+                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+                const userMsg = `
+                    <div class="mb-4">
+                        <div class="flex gap-3 justify-end">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                                <small class="text-muted-foreground mt-1">${{now}}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+                const loadingMsg = `
+                    <div class="mb-4" id="loading-indicator">
+                        <div class="flex gap-3 justify-start">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                    <div class="flex items-center gap-2">
+                                        <span>Assistant is typing</span>
+                                        <span class="loading loading-dots loading-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+                setTimeout(() => {{
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+                }}, 100);
+            """
         )
         buttons.append(btn)
 
@@ -197,8 +250,60 @@ def generate_mui_slider(tag_info, session_id):
             cls=ButtonT.primary,
             hx_post=f"/send-button/{session_id}",
             hx_vals=f"js:{{message: document.getElementById('{slider_id}').value}}",
-            hx_target="#chat-messages",
-            hx_swap="innerHTML"
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap="""
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) loadingIndicator.remove();
+                if (typeof renderMathInElement !== 'undefined') {
+                    try {
+                        renderMathInElement(document.getElementById('chat-messages'), {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                            throwOnError: false
+                        });
+                    } catch(e) {}
+                }
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) mainInput.focus();
+                }, 100);
+            """,
+            onclick=f"""
+                const msg = document.getElementById('{slider_id}').value;
+                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+                const userMsg = `
+                    <div class="mb-4">
+                        <div class="flex gap-3 justify-end">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                                <small class="text-muted-foreground mt-1">${{now}}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+                const loadingMsg = `
+                    <div class="mb-4" id="loading-indicator">
+                        <div class="flex gap-3 justify-start">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                    <div class="flex items-center gap-2">
+                                        <span>Assistant is typing</span>
+                                        <span class="loading loading-dots loading-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+                setTimeout(() => {{
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+                }}, 100);
+            """
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -249,8 +354,62 @@ def generate_mui_checkboxes(tag_info, session_id):
                     .map(cb => cb.value)
                     .join(', ') || 'none selected'
             }}""",
-            hx_target="#chat-messages",
-            hx_swap="innerHTML"
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap="""
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) loadingIndicator.remove();
+                if (typeof renderMathInElement !== 'undefined') {
+                    try {
+                        renderMathInElement(document.getElementById('chat-messages'), {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                            throwOnError: false
+                        });
+                    } catch(e) {}
+                }
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) mainInput.focus();
+                }, 100);
+            """,
+            onclick=f"""
+                const msg = Array.from(document.querySelectorAll('input[name="{group_id}"]:checked'))
+                    .map(cb => cb.value)
+                    .join(', ') || 'none selected';
+                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+                const userMsg = `
+                    <div class="mb-4">
+                        <div class="flex gap-3 justify-end">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                                <small class="text-muted-foreground mt-1">${{now}}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+                const loadingMsg = `
+                    <div class="mb-4" id="loading-indicator">
+                        <div class="flex gap-3 justify-start">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                    <div class="flex items-center gap-2">
+                                        <span>Assistant is typing</span>
+                                        <span class="loading loading-dots loading-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+                setTimeout(() => {{
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+                }}, 100);
+            """
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -310,8 +469,60 @@ def generate_mui_rating(tag_info, session_id):
             hx_vals=f"""js:{{
                 message: document.querySelector('input[name="{rating_id}"]:checked')?.value || '0'
             }}""",
-            hx_target="#chat-messages",
-            hx_swap="innerHTML"
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap="""
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) loadingIndicator.remove();
+                if (typeof renderMathInElement !== 'undefined') {
+                    try {
+                        renderMathInElement(document.getElementById('chat-messages'), {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                            throwOnError: false
+                        });
+                    } catch(e) {}
+                }
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) mainInput.focus();
+                }, 100);
+            """,
+            onclick=f"""
+                const msg = document.querySelector('input[name="{rating_id}"]:checked')?.value || '0';
+                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+                const userMsg = `
+                    <div class="mb-4">
+                        <div class="flex gap-3 justify-end">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                                <small class="text-muted-foreground mt-1">${{now}}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+                const loadingMsg = `
+                    <div class="mb-4" id="loading-indicator">
+                        <div class="flex gap-3 justify-start">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                    <div class="flex items-center gap-2">
+                                        <span>Assistant is typing</span>
+                                        <span class="loading loading-dots loading-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+                setTimeout(() => {{
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+                }}, 100);
+            """
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -348,8 +559,60 @@ def generate_mui_toggle(tag_info, session_id):
             cls=ButtonT.primary,
             hx_post=f"/send-button/{session_id}",
             hx_vals=f"""js:{{message: document.getElementById('{toggle_id}').checked ? 'yes' : 'no'}}""",
-            hx_target="#chat-messages",
-            hx_swap="innerHTML"
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap="""
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) loadingIndicator.remove();
+                if (typeof renderMathInElement !== 'undefined') {
+                    try {
+                        renderMathInElement(document.getElementById('chat-messages'), {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                            throwOnError: false
+                        });
+                    } catch(e) {}
+                }
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) mainInput.focus();
+                }, 100);
+            """,
+            onclick=f"""
+                const msg = document.getElementById('{toggle_id}').checked ? 'yes' : 'no';
+                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+                const userMsg = `
+                    <div class="mb-4">
+                        <div class="flex gap-3 justify-end">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                                <small class="text-muted-foreground mt-1">${{now}}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+                const loadingMsg = `
+                    <div class="mb-4" id="loading-indicator">
+                        <div class="flex gap-3 justify-start">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                    <div class="flex items-center gap-2">
+                                        <span>Assistant is typing</span>
+                                        <span class="loading loading-dots loading-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+                setTimeout(() => {{
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+                }}, 100);
+            """
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -478,8 +741,60 @@ def generate_mui_date(tag_info, session_id):
             cls=ButtonT.primary,
             hx_post=f"/send-button/{session_id}",
             hx_vals=f"js:{{message: document.getElementById('{date_id}').value || 'no date selected'}}",
-            hx_target="#chat-messages",
-            hx_swap="innerHTML"
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap="""
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) loadingIndicator.remove();
+                if (typeof renderMathInElement !== 'undefined') {
+                    try {
+                        renderMathInElement(document.getElementById('chat-messages'), {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                            throwOnError: false
+                        });
+                    } catch(e) {}
+                }
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) mainInput.focus();
+                }, 100);
+            """,
+            onclick=f"""
+                const msg = document.getElementById('{date_id}').value || 'no date selected';
+                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+                const userMsg = `
+                    <div class="mb-4">
+                        <div class="flex gap-3 justify-end">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                                <small class="text-muted-foreground mt-1">${{now}}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+                const loadingMsg = `
+                    <div class="mb-4" id="loading-indicator">
+                        <div class="flex gap-3 justify-start">
+                            <div class="space-y-1">
+                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                    <div class="flex items-center gap-2">
+                                        <span>Assistant is typing</span>
+                                        <span class="loading loading-dots loading-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+                setTimeout(() => {{
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+                }}, 100);
+            """
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -678,15 +993,60 @@ def ChatInterface(session_id="default"):
                 UkIcon("send", cls="mr-2"),
                 "Send",
                 cls=ButtonT.primary,
-                type="submit"
+                type="submit",
+                id="send-btn"
             ),
             cls="gap-2 w-full"
         ),
         id="chat-form",
         hx_post=f"/chat/{session_id}",
-        hx_target="#chat-messages",
-        hx_swap="innerHTML",
-        onsubmit="setTimeout(() => this.reset(), 10); return true;",
+        hx_target="#scroll-anchor",
+        hx_swap="beforebegin",
+        onsubmit="""
+            const msg = this.message.value.trim();
+            if (!msg) return false;
+
+            // Show user message immediately
+            const now = new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
+            const userMsg = `
+                <div class="mb-4">
+                    <div class="flex gap-3 justify-end">
+                        <div class="space-y-1">
+                            <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${msg}</div>
+                            <small class="text-muted-foreground mt-1">${now}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+
+            // Show loading indicator
+            const loadingMsg = `
+                <div class="mb-4" id="loading-indicator">
+                    <div class="flex gap-3 justify-start">
+                        <div class="space-y-1">
+                            <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                <div class="flex items-center gap-2">
+                                    <span>Assistant is typing</span>
+                                    <span class="loading loading-dots loading-sm"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+
+            // Scroll to bottom
+            setTimeout(() => {
+                const anchor = document.getElementById('scroll-anchor');
+                if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+
+            // Clear input
+            setTimeout(() => this.reset(), 10);
+            return true;
+        """,
         cls="p-4 border-t border-border"
     )
 
@@ -712,6 +1072,67 @@ def ChatInterface(session_id="default"):
         header,
         messages,
         chat_form,
+        Script("""
+            // Function to render KaTeX in the chat
+            function renderKatexInChat() {
+                if (typeof window.katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
+                    try {
+                        console.log('Rendering KaTeX...');
+                        const chatMessages = document.getElementById('chat-messages');
+                        if (chatMessages) {
+                            renderMathInElement(chatMessages, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                    {left: '\\\\[', right: '\\\\]', display: true},
+                                    {left: '\\\\(', right: '\\\\)', display: false}
+                                ],
+                                throwOnError: false
+                            });
+                            console.log('KaTeX rendering complete');
+                        }
+                    } catch(e) {
+                        console.error('KaTeX error:', e);
+                    }
+                } else {
+                    console.log('KaTeX not available, retrying...');
+                    setTimeout(renderKatexInChat, 100);
+                }
+            }
+
+            // Render KaTeX on initial page load
+            setTimeout(renderKatexInChat, 100);
+
+            // Global HTMX event listener for all swaps
+            document.body.addEventListener('htmx:afterSwap', function(event) {
+                console.log('HTMX afterSwap triggered');
+
+                // Remove loading indicator
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    console.log('Removing loading indicator');
+                    loadingIndicator.remove();
+                }
+
+                // Render KaTeX after swap
+                setTimeout(renderKatexInChat, 50);
+
+                // Scroll to bottom
+                setTimeout(() => {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) {
+                        console.log('Scrolling to anchor');
+                        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+
+                    // Refocus input
+                    const mainInput = document.getElementById('message-input');
+                    if (mainInput) {
+                        mainInput.focus();
+                    }
+                }, 100);
+            });
+        """),
         cls="flex flex-col h-screen max-w-5xl mx-auto"
     )
 
@@ -891,59 +1312,17 @@ RULES:
         error_msg = f"Error: {str(e)}"
         add_message(session_id, "assistant", error_msg)
 
-    # Return updated conversation with scroll anchor
+    # Get the assistant's message (the last message in conversation)
     conversation = get_conversation(session_id)
-    messages = [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
-                for msg in conversation]
+    assistant_msg = conversation[-1]
 
-    # Add a scroll anchor at the bottom
-    scroll_anchor = Div(id="scroll-anchor")
-    scroll_script = Script("""
-        function tryRenderKaTeX() {
-            // Wait for both KaTeX and renderMathInElement to be available
-            if (typeof window.katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
-                console.log('KaTeX ready, processing LaTeX...');
-                try {
-                    renderMathInElement(document.getElementById('chat-messages'), {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false},
-                            {left: '\\\\[', right: '\\\\]', display: true},
-                            {left: '\\\\(', right: '\\\\)', display: false}
-                        ],
-                        throwOnError: false
-                    });
-                    console.log('KaTeX rendering complete');
-                } catch(e) {
-                    console.error('KaTeX error:', e);
-                }
-            } else {
-                console.log('Waiting for KaTeX...', {katex: typeof window.katex, renderMath: typeof renderMathInElement});
-                // Retry after a short delay
-                setTimeout(tryRenderKaTeX, 50);
-            }
-        }
-
-        setTimeout(() => {
-            tryRenderKaTeX();
-
-            // Scroll to bottom
-            setTimeout(() => {
-                const anchor = document.getElementById('scroll-anchor');
-                if (anchor) {
-                    anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }
-
-                // Refocus main input
-                const mainInput = document.getElementById('message-input');
-                if (mainInput) {
-                    mainInput.focus();
-                }
-            }, 200);
-        }, 100);
-    """)
-
-    return messages + [scroll_anchor, scroll_script]
+    # Return only the assistant's message (cleanup handled by hx_on__after_swap)
+    return ChatMessage(
+        assistant_msg["role"],
+        assistant_msg["content"],
+        assistant_msg.get("timestamp"),
+        session_id
+    )
 
 @rt("/clear/{session_id}")
 def post(session_id: str):
@@ -1128,59 +1507,17 @@ RULES:
         error_msg = f"Error: {str(e)}"
         add_message(session_id, "assistant", error_msg)
 
-    # Return updated conversation with scroll anchor
+    # Get the assistant's message (the last message in conversation)
     conversation = get_conversation(session_id)
-    messages = [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
-                for msg in conversation]
+    assistant_msg = conversation[-1]
 
-    # Add a scroll anchor at the bottom
-    scroll_anchor = Div(id="scroll-anchor")
-    scroll_script = Script("""
-        function tryRenderKaTeX() {
-            // Wait for both KaTeX and renderMathInElement to be available
-            if (typeof window.katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
-                console.log('KaTeX ready, processing LaTeX...');
-                try {
-                    renderMathInElement(document.getElementById('chat-messages'), {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false},
-                            {left: '\\\\[', right: '\\\\]', display: true},
-                            {left: '\\\\(', right: '\\\\)', display: false}
-                        ],
-                        throwOnError: false
-                    });
-                    console.log('KaTeX rendering complete');
-                } catch(e) {
-                    console.error('KaTeX error:', e);
-                }
-            } else {
-                console.log('Waiting for KaTeX...', {katex: typeof window.katex, renderMath: typeof renderMathInElement});
-                // Retry after a short delay
-                setTimeout(tryRenderKaTeX, 50);
-            }
-        }
-
-        setTimeout(() => {
-            tryRenderKaTeX();
-
-            // Scroll to bottom
-            setTimeout(() => {
-                const anchor = document.getElementById('scroll-anchor');
-                if (anchor) {
-                    anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }
-
-                // Refocus main input
-                const mainInput = document.getElementById('message-input');
-                if (mainInput) {
-                    mainInput.focus();
-                }
-            }, 200);
-        }, 100);
-    """)
-
-    return messages + [scroll_anchor, scroll_script]
+    # Return only the assistant's message (cleanup handled by hx_on__after_swap)
+    return ChatMessage(
+        assistant_msg["role"],
+        assistant_msg["content"],
+        assistant_msg.get("timestamp"),
+        session_id
+    )
 
 if __name__ == "__main__":
     serve(port=5001)
