@@ -16,25 +16,23 @@ load_dotenv()
 # Initialize Groq client
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-# KaTeX auto-render script for LaTeX support
+# KaTeX scripts for LaTeX support
+katex_css = Link(rel="stylesheet",
+                 href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css",
+                 integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV",
+                 crossorigin="anonymous")
+
+katex_js = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js",
+                  integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8",
+                  crossorigin="anonymous")
+
 katex_autorender = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js",
                           integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05",
-                          crossorigin="anonymous",
-                          onload="""
-                          renderMathInElement(document.body, {
-                            delimiters: [
-                              {left: '$$', right: '$$', display: true},
-                              {left: '$', right: '$', display: false},
-                              {left: '\\\\[', right: '\\\\]', display: true},
-                              {left: '\\\\(', right: '\\\\)', display: false}
-                            ],
-                            throwOnError: false
-                          });
-                          """)
+                          crossorigin="anonymous")
 
 # Create FastHTML app with MonsterUI theme
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(highlightjs=True, katex=True) + [katex_autorender],
+    hdrs=Theme.blue.headers(highlightjs=True) + [katex_css, katex_js, katex_autorender],
     live=True
 )
 
@@ -146,6 +144,51 @@ def generate_mui_component(tag_info, session_id):
         # Unknown type, return empty div
         return Div()
 
+def extract_latex(content):
+    """Extract LaTeX blocks and replace with placeholders"""
+    import re
+
+    latex_blocks = []
+
+    # Extract \[...\] display math (with possible \begin{aligned})
+    def save_bracket_display(match):
+        latex_blocks.append(('display', match.group(0)))
+        return f'<!--LATEX_BLOCK_{len(latex_blocks)-1}-->'
+
+    content = re.sub(r'\\\[.*?\\\]', save_bracket_display, content, flags=re.DOTALL)
+
+    # Extract $$...$$ display math
+    def save_dollar_display(match):
+        latex_blocks.append(('display', match.group(0)))
+        return f'<!--LATEX_BLOCK_{len(latex_blocks)-1}-->'
+
+    content = re.sub(r'\$\$(.*?)\$\$', save_dollar_display, content, flags=re.DOTALL)
+
+    # Extract \(...\) inline math
+    def save_paren_inline(match):
+        latex_blocks.append(('inline', match.group(0)))
+        return f'<!--LATEX_BLOCK_{len(latex_blocks)-1}-->'
+
+    content = re.sub(r'\\\(.*?\\\)', save_paren_inline, content, flags=re.DOTALL)
+
+    # Extract $...$ inline math (but not $$)
+    def save_dollar_inline(match):
+        latex_blocks.append(('inline', match.group(0)))
+        return f'<!--LATEX_BLOCK_{len(latex_blocks)-1}-->'
+
+    content = re.sub(r'(?<!\$)\$(?!\$)([^\$]+?)\$(?!\$)', save_dollar_inline, content)
+
+    return content, latex_blocks
+
+def restore_latex(content, latex_blocks):
+    """Restore LaTeX blocks from placeholders - leave raw for KaTeX"""
+    for i, (math_type, latex_content) in enumerate(latex_blocks):
+        placeholder = f'<!--LATEX_BLOCK_{i}-->'
+        # Restore LaTeX as-is, KaTeX will process it
+        content = content.replace(placeholder, latex_content)
+
+    return content
+
 def process_mui_tags(content, session_id):
     """Process MUI tags in content and return components + cleaned markdown"""
     # Find all MUI tags with regex to get positions
@@ -193,8 +236,14 @@ def ChatMessage(role, content, timestamp=None, session_id="default"):
         # Process MUI tags first
         mui_components, cleaned_content = process_mui_tags(content, session_id)
 
-        # Render markdown with MonsterUI styling
-        rendered_md = render_md(cleaned_content)
+        # Extract LaTeX blocks before markdown processing
+        latex_extracted, latex_blocks = extract_latex(cleaned_content)
+
+        # Render markdown with MonsterUI styling (LaTeX is now safe)
+        rendered_md = render_md(latex_extracted)
+
+        # Restore LaTeX blocks after markdown
+        rendered_md = restore_latex(rendered_md, latex_blocks)
 
         # Split rendered markdown by HTML comment placeholders and interleave with components
         content_parts = []
@@ -392,25 +441,41 @@ RULES:
     # Add a scroll anchor at the bottom
     scroll_anchor = Div(id="scroll-anchor")
     scroll_script = Script("""
-        setTimeout(() => {
-            // Render LaTeX with KaTeX
-            if (typeof renderMathInElement !== 'undefined') {
-                renderMathInElement(document.getElementById('chat-messages'), {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\\\[', right: '\\\\]', display: true},
-                        {left: '\\\\(', right: '\\\\)', display: false}
-                    ],
-                    throwOnError: false
-                });
+        function tryRenderKaTeX() {
+            // Wait for both KaTeX and renderMathInElement to be available
+            if (typeof window.katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
+                console.log('KaTeX ready, processing LaTeX...');
+                try {
+                    renderMathInElement(document.getElementById('chat-messages'), {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\\\[', right: '\\\\]', display: true},
+                            {left: '\\\\(', right: '\\\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                    console.log('KaTeX rendering complete');
+                } catch(e) {
+                    console.error('KaTeX error:', e);
+                }
+            } else {
+                console.log('Waiting for KaTeX...', {katex: typeof window.katex, renderMath: typeof renderMathInElement});
+                // Retry after a short delay
+                setTimeout(tryRenderKaTeX, 50);
             }
+        }
+
+        setTimeout(() => {
+            tryRenderKaTeX();
 
             // Scroll to bottom
-            const anchor = document.getElementById('scroll-anchor');
-            if (anchor) {
-                anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
+            setTimeout(() => {
+                const anchor = document.getElementById('scroll-anchor');
+                if (anchor) {
+                    anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, 200);
         }, 100);
     """)
 
@@ -519,25 +584,41 @@ RULES:
     # Add a scroll anchor at the bottom
     scroll_anchor = Div(id="scroll-anchor")
     scroll_script = Script("""
-        setTimeout(() => {
-            // Render LaTeX with KaTeX
-            if (typeof renderMathInElement !== 'undefined') {
-                renderMathInElement(document.getElementById('chat-messages'), {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\\\[', right: '\\\\]', display: true},
-                        {left: '\\\\(', right: '\\\\)', display: false}
-                    ],
-                    throwOnError: false
-                });
+        function tryRenderKaTeX() {
+            // Wait for both KaTeX and renderMathInElement to be available
+            if (typeof window.katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
+                console.log('KaTeX ready, processing LaTeX...');
+                try {
+                    renderMathInElement(document.getElementById('chat-messages'), {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\\\[', right: '\\\\]', display: true},
+                            {left: '\\\\(', right: '\\\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                    console.log('KaTeX rendering complete');
+                } catch(e) {
+                    console.error('KaTeX error:', e);
+                }
+            } else {
+                console.log('Waiting for KaTeX...', {katex: typeof window.katex, renderMath: typeof renderMathInElement});
+                // Retry after a short delay
+                setTimeout(tryRenderKaTeX, 50);
             }
+        }
+
+        setTimeout(() => {
+            tryRenderKaTeX();
 
             // Scroll to bottom
-            const anchor = document.getElementById('scroll-anchor');
-            if (anchor) {
-                anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
+            setTimeout(() => {
+                const anchor = document.getElementById('scroll-anchor');
+                if (anchor) {
+                    anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, 200);
         }, 100);
     """)
 
