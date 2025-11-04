@@ -268,6 +268,19 @@ def generate_mui_rating(tag_info, session_id):
 
     # Create star radio buttons in normal order (1 to max)
     stars = []
+
+    # Add hidden 0-star option as default
+    stars.append(
+        Input(
+            type="radio",
+            name=rating_id,
+            value="0",
+            checked=True,
+            cls="rating-hidden",
+            id=f"{rating_id}-0"
+        )
+    )
+
     for i in range(1, max_rating + 1):
         stars.append(
             Input(
@@ -295,7 +308,7 @@ def generate_mui_rating(tag_info, session_id):
             cls=ButtonT.primary,
             hx_post=f"/send-button/{session_id}",
             hx_vals=f"""js:{{
-                message: document.querySelector('input[name="{rating_id}"]:checked')?.value || 'no rating selected'
+                message: document.querySelector('input[name="{rating_id}"]:checked')?.value || '0'
             }}""",
             hx_target="#chat-messages",
             hx_swap="innerHTML"
@@ -426,6 +439,52 @@ def generate_mui_video(tag_info, session_id):
         cls="my-4 p-4 border border-border rounded-lg"
     )
 
+def generate_mui_date(tag_info, session_id):
+    """Generate MonsterUI date picker component"""
+    attrs = tag_info['attrs']
+    label = attrs.get('label', '')
+    min_date = attrs.get('min', '')
+    max_date = attrs.get('max', '')
+    default_date = attrs.get('value', '')
+
+    # Generate unique ID for this date picker
+    import time
+    date_id = f"date-{int(time.time() * 1000000)}"
+
+    # Build input attributes
+    input_attrs = {
+        'type': 'date',
+        'id': date_id,
+        'cls': 'input input-bordered w-full mb-3'
+    }
+
+    if min_date:
+        input_attrs['min'] = min_date
+    if max_date:
+        input_attrs['max'] = max_date
+    if default_date:
+        input_attrs['value'] = default_date
+
+    return Div(
+        # Label
+        Label(label, cls="font-semibold mb-2") if label else None,
+
+        # Date input
+        Input(**input_attrs),
+
+        # Submit button
+        Button(
+            "Submit Date",
+            cls=ButtonT.primary,
+            hx_post=f"/send-button/{session_id}",
+            hx_vals=f"js:{{message: document.getElementById('{date_id}').value || 'no date selected'}}",
+            hx_target="#chat-messages",
+            hx_swap="innerHTML"
+        ),
+
+        cls="space-y-2 my-4 p-4 border border-border rounded-lg"
+    )
+
 
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
@@ -449,6 +508,8 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_image(tag_info, session_id)
     elif component_type == 'video':
         return generate_mui_video(tag_info, session_id)
+    elif component_type == 'date':
+        return generate_mui_date(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
@@ -676,6 +737,8 @@ async def post(session_id: str, message: str):
     # System prompt explaining MUI tags
     system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
 
+IMPORTANT - ONE QUESTION AT A TIME: When asking questions with interactive components (buttons, checkboxes, sliders, rating, toggle, date picker), only ask ONE question at a time. Wait for the user's response before asking the next question. If the user requests multiple questions or says "then ask...", acknowledge that you will ask them one at a time, and only present the FIRST question now.
+
 LATEX SUPPORT: You can use LaTeX for mathematical formulas:
 - Inline math: $E = mc^2$ or \\(E = mc^2\\)
 - Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
@@ -749,6 +812,18 @@ Use videos when:
 - The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
 - Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
 - The caption attribute is optional
+
+DATE PICKER: For selecting dates with a calendar interface:
+<mui type="date" label="Select your birth date" min="1900-01-01" max="2010-12-31">
+</mui>
+
+Use date picker when:
+- Asking for specific dates (birthdays, appointments, deadlines)
+- Scheduling or planning questions
+- Historical date references
+- Optional attributes: min (earliest date), max (latest date), value (default date)
+- Dates must be in YYYY-MM-DD format
+- User clicks the input to see a calendar interface
 
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
@@ -901,6 +976,8 @@ async def post(session_id: str, message: str):
     # System prompt explaining MUI tags
     system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
 
+IMPORTANT - ONE QUESTION AT A TIME: When asking questions with interactive components (buttons, checkboxes, sliders, rating, toggle, date picker), only ask ONE question at a time. Wait for the user's response before asking the next question. If the user requests multiple questions or says "then ask...", acknowledge that you will ask them one at a time, and only present the FIRST question now.
+
 LATEX SUPPORT: You can use LaTeX for mathematical formulas:
 - Inline math: $E = mc^2$ or \\(E = mc^2\\)
 - Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
@@ -974,6 +1051,18 @@ Use videos when:
 - The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
 - Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
 - The caption attribute is optional
+
+DATE PICKER: For selecting dates with a calendar interface:
+<mui type="date" label="Select your birth date" min="1900-01-01" max="2010-12-31">
+</mui>
+
+Use date picker when:
+- Asking for specific dates (birthdays, appointments, deadlines)
+- Scheduling or planning questions
+- Historical date references
+- Optional attributes: min (earliest date), max (latest date), value (default date)
+- Dates must be in YYYY-MM-DD format
+- User clicks the input to see a calendar interface
 
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
