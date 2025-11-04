@@ -15,7 +15,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Create FastHTML app with MonsterUI theme
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(),
+    hdrs=Theme.blue.headers(highlightjs=True),
     live=True
 )
 
@@ -52,10 +52,18 @@ def ChatMessage(role, content, timestamp=None):
 
     time_str = timestamp.strftime("%I:%M %p") if timestamp else ""
 
+    # Render assistant messages as markdown, user messages as plain text
+    if is_user:
+        message_body = Div(content, cls=f"rounded-lg p-4 max-w-2xl {message_cls}")
+    else:
+        # Render markdown with MonsterUI styling
+        rendered_md = render_md(content)
+        message_body = Div(Safe(rendered_md), cls=f"rounded-lg p-4 max-w-2xl {message_cls}")
+
     message_content = DivLAligned(
         avatar if not is_user else None,
         Div(
-            Div(content, cls=f"rounded-lg p-4 max-w-2xl {message_cls}"),
+            message_body,
             Small(time_str, cls=(TextT.muted, "mt-1")) if time_str else None,
             cls="space-y-1"
         ),
@@ -157,9 +165,10 @@ async def post(session_id: str, message: str):
         # Call Groq API
         chat_completion = client.chat.completions.create(
             messages=messages_for_api,
-            model="llama-3.1-8b-instant",  # or "mixtral-8x7b-32768"
+            model="openai/gpt-oss-120b",  # or "mixtral-8x7b-32768"
             temperature=0.7,
             max_tokens=1024,
+            tools=[{"type":"browser_search"},{"type":"code_interpreter"}]
         )
 
         assistant_message = chat_completion.choices[0].message.content
