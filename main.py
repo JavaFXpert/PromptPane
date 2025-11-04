@@ -304,6 +304,76 @@ def generate_mui_rating(tag_info, session_id):
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
     )
 
+def generate_mui_toggle(tag_info, session_id):
+    """Generate MonsterUI toggle switch component"""
+    attrs = tag_info['attrs']
+    label = attrs.get('label', '')
+    default_checked = attrs.get('checked', 'false').lower() == 'true'
+
+    # Generate unique ID for this toggle
+    import time
+    toggle_id = f"toggle-{int(time.time() * 1000000)}"
+
+    return Div(
+        # Label
+        Label(label, cls="font-semibold mb-2") if label else None,
+
+        # Toggle switch
+        Label(
+            Input(
+                type="checkbox",
+                id=toggle_id,
+                cls="toggle toggle-primary",
+                checked=default_checked
+            ),
+            cls="cursor-pointer mb-3 flex items-center"
+        ),
+
+        # Submit button
+        Button(
+            "Submit Answer",
+            cls=ButtonT.primary,
+            hx_post=f"/send-button/{session_id}",
+            hx_vals=f"""js:{{message: document.getElementById('{toggle_id}').checked ? 'yes' : 'no'}}""",
+            hx_target="#chat-messages",
+            hx_swap="innerHTML"
+        ),
+
+        cls="space-y-2 my-4 p-4 border border-border rounded-lg"
+    )
+
+def generate_mui_image(tag_info, session_id):
+    """Generate MonsterUI image display component"""
+    attrs = tag_info['attrs']
+    src = attrs.get('src', '')
+    caption = attrs.get('caption', '')
+    alt = attrs.get('alt', caption or 'Image')
+
+    if not src:
+        return Div("Error: No image source provided", cls="text-error")
+
+    image_components = []
+
+    # Image with responsive styling
+    image_components.append(
+        Img(
+            src=src,
+            alt=alt,
+            cls="max-w-full h-auto rounded-lg"
+        )
+    )
+
+    # Optional caption
+    if caption:
+        image_components.append(
+            P(caption, cls="text-sm text-muted-foreground text-center mt-2")
+        )
+
+    return Div(
+        *image_components,
+        cls="my-4 p-4 border border-border rounded-lg"
+    )
+
 
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
@@ -321,6 +391,10 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_checkboxes(tag_info, session_id)
     elif component_type == 'rating':
         return generate_mui_rating(tag_info, session_id)
+    elif component_type == 'toggle':
+        return generate_mui_toggle(tag_info, session_id)
+    elif component_type == 'image':
+        return generate_mui_image(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
@@ -589,6 +663,27 @@ Use ratings when:
 - Reviews, feedback, or opinions on a scale
 - The max attribute sets the number of stars (default is 5)
 
+TOGGLE: For yes/no or on/off binary questions:
+<mui type="toggle" label="Enable notifications?">
+</mui>
+
+Use toggles when:
+- Simple binary choices (yes/no, on/off, true/false, enable/disable)
+- Settings or preferences
+- Questions with only two possible answers
+- User switches the toggle to their choice, then clicks submit
+
+IMAGE: To display images from URLs with optional captions:
+<mui type="image" src="https://example.com/image.jpg" caption="Optional caption text">
+</mui>
+
+Use images when:
+- Showing diagrams, charts, or visual examples
+- Providing visual context or explanations
+- Displaying examples, screenshots, or illustrations
+- The src attribute is required and must be a valid image URL
+- The caption attribute is optional
+
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
 How to create buttons:
@@ -627,8 +722,9 @@ RULES:
 2. For questions with multiple correct answers, use checkboxes instead of buttons
 3. For numeric answers in a range, use sliders
 4. For rating/satisfaction questions, use the rating component with stars
-5. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-6. When creating multiple questions, EACH ONE needs its own <mui> component"""
+5. For yes/no or binary questions, use toggles
+6. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+7. When creating multiple questions, EACH ONE needs its own <mui> component"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -780,6 +876,27 @@ Use ratings when:
 - Reviews, feedback, or opinions on a scale
 - The max attribute sets the number of stars (default is 5)
 
+TOGGLE: For yes/no or on/off binary questions:
+<mui type="toggle" label="Enable notifications?">
+</mui>
+
+Use toggles when:
+- Simple binary choices (yes/no, on/off, true/false, enable/disable)
+- Settings or preferences
+- Questions with only two possible answers
+- User switches the toggle to their choice, then clicks submit
+
+IMAGE: To display images from URLs with optional captions:
+<mui type="image" src="https://example.com/image.jpg" caption="Optional caption text">
+</mui>
+
+Use images when:
+- Showing diagrams, charts, or visual examples
+- Providing visual context or explanations
+- Displaying examples, screenshots, or illustrations
+- The src attribute is required and must be a valid image URL
+- The caption attribute is optional
+
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
 How to create buttons:
@@ -818,8 +935,9 @@ RULES:
 2. For questions with multiple correct answers, use checkboxes instead of buttons
 3. For numeric answers in a range, use sliders
 4. For rating/satisfaction questions, use the rating component with stars
-5. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-6. When creating multiple questions, EACH ONE needs its own <mui> component"""
+5. For yes/no or binary questions, use toggles
+6. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+7. When creating multiple questions, EACH ONE needs its own <mui> component"""
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
