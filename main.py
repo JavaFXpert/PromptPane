@@ -11,6 +11,9 @@ from typing import Any
 # Import application configuration
 import config
 
+# Import database module
+import db
+
 # Import application constants
 from constants import SYSTEM_PROMPT, DEBUG_COMMANDS
 
@@ -84,25 +87,6 @@ app, rt = fast_app(
     live=config.ENABLE_LIVE_RELOAD
 )
 
-# In-memory conversation history (in production, use database)
-conversations: dict[str, list[dict[str, Any]]] = {}
-
-def get_conversation(session_id: str) -> list[dict[str, Any]]:
-    """Get or create conversation history for a session"""
-    if session_id not in conversations:
-        conversations[session_id] = []
-    return conversations[session_id]
-
-def add_message(session_id: str, role: str, content: str) -> list[dict[str, Any]]:
-    """Add a message to conversation history"""
-    conversation: list[dict[str, Any]] = get_conversation(session_id)
-    conversation.append({
-        "role": role,
-        "content": content,
-        "timestamp": datetime.now()
-    })
-    return conversation
-
 # ============================================================================
 # Routes
 # ============================================================================
@@ -111,8 +95,8 @@ def add_message(session_id: str, role: str, content: str) -> list[dict[str, Any]
 def get():
     """Main page"""
     session_id = config.DEFAULT_SESSION_ID
-    conversation = get_conversation(session_id)
-    return Title("PromptPane"), ChatInterface(session_id, conversation, get_conversation)
+    conversation = db.get_conversation(session_id)
+    return Title("PromptPane"), ChatInterface(session_id, conversation, db.get_conversation)
 
 @rt("/chat/{session_id}")
 async def post(session_id: str, message: str):
@@ -123,8 +107,8 @@ async def post(session_id: str, message: str):
     except RateLimitError as e:
         # Return rate limit error message
         error_msg = f"⏱️ **Rate Limit Exceeded**\n\n{str(e)}"
-        add_message(session_id, "assistant", error_msg)
-        conversation = get_conversation(session_id)
+        db.add_message(session_id, "assistant", error_msg)
+        conversation = db.get_conversation(session_id)
         assistant_msg = conversation[-1]
         return ChatMessage(
             assistant_msg["role"],
@@ -135,8 +119,8 @@ async def post(session_id: str, message: str):
     except MessageValidationError as e:
         # Return message validation error
         error_msg = f"❌ **Invalid Message**\n\n{str(e)}"
-        add_message(session_id, "assistant", error_msg)
-        conversation = get_conversation(session_id)
+        db.add_message(session_id, "assistant", error_msg)
+        conversation = db.get_conversation(session_id)
         assistant_msg = conversation[-1]
         return ChatMessage(
             assistant_msg["role"],
@@ -154,8 +138,8 @@ async def post(session_id: str, message: str):
         # Generic validation error
         error_msg = f"❌ **Validation Error**\n\n{str(e)}"
         logger.error(f"Validation failed: {e}")
-        add_message(session_id, "assistant", error_msg)
-        conversation = get_conversation(session_id)
+        db.add_message(session_id, "assistant", error_msg)
+        conversation = db.get_conversation(session_id)
         assistant_msg = conversation[-1]
         return ChatMessage(
             assistant_msg["role"],
@@ -165,15 +149,15 @@ async def post(session_id: str, message: str):
         )
 
     # Add user message
-    add_message(session_id, "user", message)
+    db.add_message(session_id, "user", message)
 
     # Check for debug commands
     if is_debug_command(message):
         # Handle /debug-help separately (doesn't raise error)
         if message.strip() == '/debug-help':
             help_msg = handle_debug_command(message)
-            add_message(session_id, "assistant", help_msg)
-            conversation = get_conversation(session_id)
+            db.add_message(session_id, "assistant", help_msg)
+            conversation = db.get_conversation(session_id)
             assistant_msg = conversation[-1]
             return ChatMessage(
                 assistant_msg["role"],
@@ -183,7 +167,7 @@ async def post(session_id: str, message: str):
             )
 
     # Get conversation history for context
-    conversation = get_conversation(session_id)
+    conversation = db.get_conversation(session_id)
 
     messages_for_api = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -225,7 +209,7 @@ async def post(session_id: str, message: str):
         assistant_message = make_citations_clickable(assistant_message, citation_urls)
 
         # Add assistant response
-        add_message(session_id, "assistant", assistant_message)
+        db.add_message(session_id, "assistant", assistant_message)
 
     except Exception as e:
         # Get user-friendly error message
@@ -238,7 +222,7 @@ async def post(session_id: str, message: str):
         add_message(session_id, "assistant", error_msg)
 
     # Get the assistant's message (the last message in conversation)
-    conversation = get_conversation(session_id)
+    conversation = db.get_conversation(session_id)
     assistant_msg = conversation[-1]
 
     # Return only the assistant's message (cleanup handled by hx_on__after_swap)
@@ -263,8 +247,8 @@ def post(session_id: str):
             Div(id="scroll-anchor")
         ]
 
-    if session_id in conversations:
-        conversations[session_id] = []
+    # Clear conversation from database
+    db.clear_conversation(session_id)
 
     # Return the same structure as initial load (reuse EmptyState function)
     return [
@@ -281,8 +265,8 @@ async def post(session_id: str, message: str):
     except RateLimitError as e:
         # Return rate limit error message
         error_msg = f"⏱️ **Rate Limit Exceeded**\n\n{str(e)}"
-        add_message(session_id, "assistant", error_msg)
-        conversation = get_conversation(session_id)
+        db.add_message(session_id, "assistant", error_msg)
+        conversation = db.get_conversation(session_id)
         assistant_msg = conversation[-1]
         return ChatMessage(
             assistant_msg["role"],
@@ -293,8 +277,8 @@ async def post(session_id: str, message: str):
     except MessageValidationError as e:
         # Return message validation error
         error_msg = f"❌ **Invalid Message**\n\n{str(e)}"
-        add_message(session_id, "assistant", error_msg)
-        conversation = get_conversation(session_id)
+        db.add_message(session_id, "assistant", error_msg)
+        conversation = db.get_conversation(session_id)
         assistant_msg = conversation[-1]
         return ChatMessage(
             assistant_msg["role"],
@@ -311,8 +295,8 @@ async def post(session_id: str, message: str):
         # Generic validation error
         error_msg = f"❌ **Validation Error**\n\n{str(e)}"
         logger.error(f"Validation failed: {e}")
-        add_message(session_id, "assistant", error_msg)
-        conversation = get_conversation(session_id)
+        db.add_message(session_id, "assistant", error_msg)
+        conversation = db.get_conversation(session_id)
         assistant_msg = conversation[-1]
         return ChatMessage(
             assistant_msg["role"],
@@ -322,15 +306,15 @@ async def post(session_id: str, message: str):
         )
 
     # Add user message (button value)
-    add_message(session_id, "user", message)
+    db.add_message(session_id, "user", message)
 
     # Check for debug commands
     if is_debug_command(message):
         # Handle /debug-help separately (doesn't raise error)
         if message.strip() == '/debug-help':
             help_msg = handle_debug_command(message)
-            add_message(session_id, "assistant", help_msg)
-            conversation = get_conversation(session_id)
+            db.add_message(session_id, "assistant", help_msg)
+            conversation = db.get_conversation(session_id)
             assistant_msg = conversation[-1]
             return ChatMessage(
                 assistant_msg["role"],
@@ -340,7 +324,7 @@ async def post(session_id: str, message: str):
             )
 
     # Get conversation history
-    conversation = get_conversation(session_id)
+    conversation = db.get_conversation(session_id)
 
     messages_for_api = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -382,7 +366,7 @@ async def post(session_id: str, message: str):
         assistant_message = make_citations_clickable(assistant_message, citation_urls)
 
         # Add assistant response
-        add_message(session_id, "assistant", assistant_message)
+        db.add_message(session_id, "assistant", assistant_message)
 
     except Exception as e:
         # Get user-friendly error message
@@ -395,7 +379,7 @@ async def post(session_id: str, message: str):
         add_message(session_id, "assistant", error_msg)
 
     # Get the assistant's message (the last message in conversation)
-    conversation = get_conversation(session_id)
+    conversation = db.get_conversation(session_id)
     assistant_msg = conversation[-1]
 
     # Return only the assistant's message (cleanup handled by hx_on__after_swap)

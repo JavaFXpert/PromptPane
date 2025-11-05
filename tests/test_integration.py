@@ -38,9 +38,14 @@ def test_session():
 @pytest.fixture(autouse=True)
 def reset_conversations():
     """Reset conversations before each test"""
-    main.conversations.clear()
+    import db
+    # Clear all sessions from database
+    for session_id in db.get_all_sessions():
+        db.clear_conversation(session_id)
     yield
-    main.conversations.clear()
+    # Clear all sessions after test
+    for session_id in db.get_all_sessions():
+        db.clear_conversation(session_id)
 
 @pytest.fixture(autouse=True)
 def reset_rate_limiter():
@@ -261,6 +266,8 @@ class TestClearConversation:
 
     def test_clear_removes_conversation_history(self, client, test_session):
         """Test that clear actually removes conversation history"""
+        import db
+
         # Add some messages
         client.post(
             f"/chat/{test_session}",
@@ -271,17 +278,17 @@ class TestClearConversation:
             data={"message": "Second message"}
         )
 
-        # Verify conversation exists
-        assert test_session in main.conversations
-        assert len(main.conversations[test_session]) > 0
+        # Verify conversation exists in database
+        conversation = db.get_conversation(test_session)
+        assert len(conversation) > 0
 
         # Clear conversation
         response = client.post(f"/clear/{test_session}")
         assert response.status_code in [200, 302, 303, 307]
 
-        # Verify conversation is cleared
-        if test_session in main.conversations:
-            assert len(main.conversations[test_session]) == 0
+        # Verify conversation is cleared from database
+        conversation = db.get_conversation(test_session)
+        assert len(conversation) == 0
 
     def test_clear_invalid_session_id(self, client):
         """Test clearing with invalid session ID"""
@@ -323,15 +330,18 @@ class TestConversationManagement:
 
     def test_conversation_persists_across_requests(self, client, test_session):
         """Test that conversation history persists"""
+        import db
+
         # Send first message
         client.post(
             f"/chat/{test_session}",
             data={"message": "First message"}
         )
 
-        # Verify conversation was created
-        assert test_session in main.conversations
-        initial_length = len(main.conversations[test_session])
+        # Verify conversation was created in database
+        conversation = db.get_conversation(test_session)
+        initial_length = len(conversation)
+        assert initial_length > 0
 
         # Send second message
         client.post(
@@ -339,11 +349,14 @@ class TestConversationManagement:
             data={"message": "Second message"}
         )
 
-        # Verify conversation grew
-        assert len(main.conversations[test_session]) > initial_length
+        # Verify conversation grew in database
+        conversation = db.get_conversation(test_session)
+        assert len(conversation) > initial_length
 
     def test_different_sessions_are_independent(self, client):
         """Test that different sessions maintain separate conversations"""
+        import db
+
         session1 = "test-session-a"
         session2 = "test-session-b"
 
@@ -359,9 +372,13 @@ class TestConversationManagement:
             data={"message": "Message to session 2"}
         )
 
-        # Both should exist independently
-        if session1 in main.conversations and session2 in main.conversations:
-            assert main.conversations[session1] != main.conversations[session2]
+        # Both should exist independently in database
+        conv1 = db.get_conversation(session1)
+        conv2 = db.get_conversation(session2)
+        assert len(conv1) > 0
+        assert len(conv2) > 0
+        # Verify they have different content
+        assert conv1[0]["content"] != conv2[0]["content"]
 
 # ============================================================================
 # Error Handling Tests

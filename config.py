@@ -27,6 +27,25 @@ DEFAULT_SESSION_ID: str = "default"
 """Default session ID for conversations"""
 
 # ============================================================================
+# Database Configuration
+# ============================================================================
+
+DATABASE_PATH: str = "data/conversations.db"
+"""Path to SQLite database file"""
+
+DATABASE_ENABLE_WAL: bool = True
+"""Enable Write-Ahead Logging for better concurrency"""
+
+DATABASE_TIMEOUT: int = 30
+"""Database busy timeout in seconds"""
+
+DATABASE_MAX_MESSAGES_PER_SESSION: int = 1000
+"""Maximum messages to retrieve per session (None = unlimited)"""
+
+DATABASE_RETENTION_DAYS: int = 30
+"""Number of days to retain old messages (for maintenance)"""
+
+# ============================================================================
 # Groq API Configuration
 # ============================================================================
 

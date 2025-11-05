@@ -41,7 +41,7 @@ def EmptyState() -> Any:
         cls="flex items-center justify-center h-full"
     )
 
-def ChatMessage(role: str, content: str, timestamp: Optional[datetime] = None, session_id: str = "default") -> Any:
+def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = None, session_id: str = "default") -> Any:
     """Render a chat message bubble"""
     is_user: bool = role == "user"
 
@@ -53,7 +53,14 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime] = None, s
     message_cls = "bg-primary text-primary-foreground" if is_user else "bg-muted"
     align_cls = "justify-end" if is_user else "justify-start"
 
-    time_str = timestamp.strftime("%I:%M %p") if timestamp else ""
+    # Handle both datetime objects and ISO timestamp strings
+    if timestamp:
+        if isinstance(timestamp, str):
+            # Parse ISO timestamp string from database
+            timestamp = datetime.fromisoformat(timestamp)
+        time_str = timestamp.strftime("%I:%M %p")
+    else:
+        time_str = ""
 
     # Render assistant messages as markdown, user messages as plain text
     if is_user:
