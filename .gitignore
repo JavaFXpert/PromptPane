@@ -42,3 +42,24 @@ Thumbs.db
 
 # FastHTML
 .fasthtml/
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+*.cover
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Linting
+.ruff_cache/
+
+# Security scanning
+bandit-report.json
