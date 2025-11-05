@@ -41,6 +41,16 @@ from ui_components import (
     ChatInterface
 )
 
+# Import validators
+from validators import (
+    validate_chat_request,
+    validate_session_id,
+    ValidationError,
+    SessionIDValidationError,
+    MessageValidationError,
+    RateLimitError
+)
+
 # Initialize Groq client
 client = Groq(api_key=config.GROQ_API_KEY)
 
@@ -107,10 +117,52 @@ def get():
 @rt("/chat/{session_id}")
 async def post(session_id: str, message: str):
     """Handle chat message submission"""
-    if not message.strip():
+    # Validate inputs
+    try:
+        session_id, message = validate_chat_request(session_id, message)
+    except RateLimitError as e:
+        # Return rate limit error message
+        error_msg = f"⏱️ **Rate Limit Exceeded**\n\n{str(e)}"
+        add_message(session_id, "assistant", error_msg)
         conversation = get_conversation(session_id)
-        return [ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
-                for msg in conversation]
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
+    except MessageValidationError as e:
+        # Return message validation error
+        error_msg = f"❌ **Invalid Message**\n\n{str(e)}"
+        add_message(session_id, "assistant", error_msg)
+        conversation = get_conversation(session_id)
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
+    except SessionIDValidationError as e:
+        # Return session ID validation error
+        error_msg = f"❌ **Invalid Session**\n\n{str(e)}"
+        logger.error(f"Session ID validation failed: {e}")
+        # Can't add to conversation with invalid session ID
+        return ChatMessage("assistant", error_msg, datetime.now(), config.DEFAULT_SESSION_ID)
+    except ValidationError as e:
+        # Generic validation error
+        error_msg = f"❌ **Validation Error**\n\n{str(e)}"
+        logger.error(f"Validation failed: {e}")
+        add_message(session_id, "assistant", error_msg)
+        conversation = get_conversation(session_id)
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
 
     # Add user message
     add_message(session_id, "user", message)
@@ -200,6 +252,17 @@ async def post(session_id: str, message: str):
 @rt("/clear/{session_id}")
 def post(session_id: str):
     """Clear conversation history and return empty chat state"""
+    # Validate session ID
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError as e:
+        logger.error(f"Invalid session ID in clear route: {e}")
+        # Return empty state with default session
+        return [
+            EmptyState(),
+            Div(id="scroll-anchor")
+        ]
+
     if session_id in conversations:
         conversations[session_id] = []
 
@@ -212,6 +275,52 @@ def post(session_id: str):
 @rt("/send-button/{session_id}")
 async def post(session_id: str, message: str):
     """Handle button click - sends the button value as a message"""
+    # Validate inputs
+    try:
+        session_id, message = validate_chat_request(session_id, message)
+    except RateLimitError as e:
+        # Return rate limit error message
+        error_msg = f"⏱️ **Rate Limit Exceeded**\n\n{str(e)}"
+        add_message(session_id, "assistant", error_msg)
+        conversation = get_conversation(session_id)
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
+    except MessageValidationError as e:
+        # Return message validation error
+        error_msg = f"❌ **Invalid Message**\n\n{str(e)}"
+        add_message(session_id, "assistant", error_msg)
+        conversation = get_conversation(session_id)
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
+    except SessionIDValidationError as e:
+        # Return session ID validation error
+        error_msg = f"❌ **Invalid Session**\n\n{str(e)}"
+        logger.error(f"Session ID validation failed: {e}")
+        return ChatMessage("assistant", error_msg, datetime.now(), config.DEFAULT_SESSION_ID)
+    except ValidationError as e:
+        # Generic validation error
+        error_msg = f"❌ **Validation Error**\n\n{str(e)}"
+        logger.error(f"Validation failed: {e}")
+        add_message(session_id, "assistant", error_msg)
+        conversation = get_conversation(session_id)
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
+
     # Add user message (button value)
     add_message(session_id, "user", message)
 

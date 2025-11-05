@@ -117,3 +117,28 @@ CITATION_CSS: str = """
     }
 """
 """CSS styling for citation links"""
+
+# ============================================================================
+# Input Validation & Security
+# ============================================================================
+
+MAX_MESSAGE_LENGTH: int = 10000
+"""Maximum allowed message length in characters"""
+
+MIN_MESSAGE_LENGTH: int = 1
+"""Minimum allowed message length in characters"""
+
+MAX_SESSION_ID_LENGTH: int = 100
+"""Maximum allowed session ID length"""
+
+SESSION_ID_PATTERN: str = r'^[a-zA-Z0-9_-]+$'
+"""Regex pattern for valid session IDs (alphanumeric, underscore, hyphen)"""
+
+RATE_LIMIT_WINDOW_SECONDS: int = 60
+"""Time window for rate limiting in seconds"""
+
+RATE_LIMIT_MAX_REQUESTS: int = 10
+"""Maximum requests allowed per session within the time window"""
+
+ENABLE_RATE_LIMITING: bool = True
+"""Enable rate limiting for API requests"""
