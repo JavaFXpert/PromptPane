@@ -30,9 +30,26 @@ katex_autorender = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/co
                           integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05",
                           crossorigin="anonymous")
 
+# Custom CSS for citation links
+citation_style = Style("""
+    .citation-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-size: 0.85em;
+        font-weight: 500;
+        padding: 0 2px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .citation-link:hover {
+        color: #1d4ed8;
+        text-decoration: underline;
+    }
+""")
+
 # Create FastHTML app with MonsterUI theme
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(highlightjs=True) + [katex_css, katex_js, katex_autorender],
+    hdrs=Theme.blue.headers(highlightjs=True) + [katex_css, katex_js, katex_autorender, citation_style],
     live=True
 )
 
@@ -54,6 +71,61 @@ def add_message(session_id, role, content):
         "timestamp": datetime.now()
     })
     return conversation
+
+def extract_citation_urls(chat_completion):
+    """Extract URLs from browser_search tool results"""
+    citation_urls = {}
+
+    try:
+        message = chat_completion.choices[0].message
+        if hasattr(message, 'executed_tools') and message.executed_tools:
+            for tool in message.executed_tools:
+                if tool.type == 'browser_search' and hasattr(tool, 'search_results'):
+                    if tool.search_results and hasattr(tool.search_results, 'results'):
+                        for idx, result in enumerate(tool.search_results.results):
+                            citation_urls[idx] = {
+                                'url': result.url,
+                                'title': result.title
+                            }
+    except Exception as e:
+        print(f"Error extracting citation URLs: {e}")
+
+    return citation_urls
+
+def make_citations_clickable(content, citation_urls):
+    """Replace citation markers with clickable links"""
+    if not citation_urls:
+        return content
+
+    # Pattern matches: 【4†L716-L718】
+    pattern = r'【(\d+)†([^】]+)】'
+
+    def replace_citation(match):
+        index = int(match.group(1))
+        line_ref = match.group(2)
+        citation_text = match.group(0)
+
+        if index in citation_urls:
+            url = citation_urls[index]['url']
+            title = citation_urls[index]['title']
+
+            # Extract source name from title (before the first dash or similar separator)
+            source_name = title.split(' - ')[0].split(' | ')[0].strip()
+
+            # If source name is too long, use domain instead
+            if len(source_name) > 50:
+                from urllib.parse import urlparse
+                domain = urlparse(url).netloc
+                # Remove 'www.' prefix if present
+                source_name = domain.replace('www.', '')
+
+            # Create user-friendly clickable link
+            friendly_citation = f'[{source_name}]'
+            return f'<a href="{url}" target="_blank" rel="noopener noreferrer" class="citation-link" title="{title}">{friendly_citation}</a>'
+        else:
+            return citation_text
+
+    return re.sub(pattern, replace_citation, content)
 
 class MUITagParser(HTMLParser):
     """Parse <mui> tags and extract their content"""
@@ -1299,11 +1371,18 @@ RULES:
             messages=messages_for_api,
             model="openai/gpt-oss-120b",  # or "mixtral-8x7b-32768"
             temperature=0.7,
-            max_tokens=1024,
+            # max_tokens=1024,  # Commented out to allow longer responses
             tools=[{"type":"browser_search"},{"type":"code_interpreter"}]
         )
 
+        # Extract citation URLs from tool results
+        citation_urls = extract_citation_urls(chat_completion)
+
+        # Get assistant message content
         assistant_message = chat_completion.choices[0].message.content
+
+        # Make citations clickable
+        assistant_message = make_citations_clickable(assistant_message, citation_urls)
 
         # Add assistant response
         add_message(session_id, "assistant", assistant_message)
@@ -1496,11 +1575,20 @@ RULES:
             messages=messages_for_api,
             model="openai/gpt-oss-120b",
             temperature=0.7,
-            max_tokens=1024,
+            # max_tokens=1024,  # Commented out to allow longer responses
             tools=[{"type":"browser_search"},{"type":"code_interpreter"}]
         )
 
+        # Extract citation URLs from tool results
+        citation_urls = extract_citation_urls(chat_completion)
+
+        # Get assistant message content
         assistant_message = chat_completion.choices[0].message.content
+
+        # Make citations clickable
+        assistant_message = make_citations_clickable(assistant_message, citation_urls)
+
+        # Add assistant response
         add_message(session_id, "assistant", assistant_message)
 
     except Exception as e:
