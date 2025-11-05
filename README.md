@@ -3,7 +3,7 @@
 [![Tests](https://github.com/JavaFXpert/PromptPane/actions/workflows/test.yml/badge.svg)](https://github.com/JavaFXpert/PromptPane/actions/workflows/test.yml)
 [![Code Quality](https://github.com/JavaFXpert/PromptPane/actions/workflows/lint.yml/badge.svg)](https://github.com/JavaFXpert/PromptPane/actions/workflows/lint.yml)
 [![codecov](https://codecov.io/gh/JavaFXpert/PromptPane/branch/main/graph/badge.svg)](https://codecov.io/gh/JavaFXpert/PromptPane)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 A modern chatbot application with a beautiful UI built using FastHTML, MonsterUI, and powered by Groq's lightning-fast LLM inference.
@@ -36,7 +36,7 @@ A modern chatbot application with a beautiful UI built using FastHTML, MonsterUI
 
 ### Prerequisites
 
-- Python 3.9 or higher
+- Python 3.10 or higher (required by FastHTML)
 - A Groq API key (get one at [console.groq.com](https://console.groq.com/keys))
 - pip (Python package installer)
 
