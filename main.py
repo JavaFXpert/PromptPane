@@ -1413,14 +1413,17 @@ def post(session_id: str):
     # This matches what ChatInterface creates for the #chat-messages div
     return [
         Div(
-            DivCentered(
-                UkIcon("message-circle", height=48, width=48, cls=TextT.muted),
-                cls="mb-4"
+            Div(
+                DivCentered(
+                    UkIcon("message-circle", height=48, width=48, cls=TextT.muted),
+                    cls="mb-4"
+                ),
+                H4("No messages yet", cls=TextT.center + " mb-2"),
+                P("Start a conversation by typing a message below.",
+                  cls=(TextT.muted, TextT.center)),
+                cls="space-y-3 text-center"
             ),
-            H4("No messages yet", cls=TextT.center),
-            P("Start a conversation by typing a message below.",
-              cls=(TextT.muted, TextT.center)),
-            cls="space-y-2 flex items-center justify-center h-full"
+            cls="flex items-center justify-center h-full"
         ),
         Div(id="scroll-anchor")
     ]
