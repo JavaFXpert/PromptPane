@@ -14,6 +14,12 @@ import config
 # Import database module
 import db
 
+# Import entity extraction module
+from entity_extraction import (
+    extract_entities_from_conversation,
+    should_extract_entities
+)
+
 # Import application constants
 from constants import SYSTEM_PROMPT, DEBUG_COMMANDS
 
@@ -169,8 +175,19 @@ async def post(session_id: str, message: str):
     # Get conversation history for context
     conversation = db.get_conversation(session_id)
 
+    # Build system prompt with knowledge graph context
+    system_prompt = SYSTEM_PROMPT
+    if config.ENABLE_ENTITY_EXTRACTION:
+        kg_context = db.build_context_from_entities(
+            session_id,
+            max_entities=config.ENTITY_CONTEXT_MAX_ENTITIES,
+            min_confidence=config.ENTITY_CONTEXT_MIN_CONFIDENCE
+        )
+        if kg_context:
+            system_prompt = f"{SYSTEM_PROMPT}\n\n{kg_context}"
+
     messages_for_api = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
@@ -211,6 +228,34 @@ async def post(session_id: str, message: str):
         # Add assistant response
         db.add_message(session_id, "assistant", assistant_message)
 
+        # Extract and store entities from this conversation
+        if config.ENABLE_ENTITY_EXTRACTION:
+            if should_extract_entities(message, assistant_message):
+                try:
+                    extracted = extract_entities_from_conversation(
+                        message,
+                        assistant_message,
+                        client,
+                        temperature=config.ENTITY_EXTRACTION_TEMPERATURE
+                    )
+
+                    # Store entities that meet confidence threshold
+                    for entity_data in extracted:
+                        if entity_data["confidence"] >= config.ENTITY_EXTRACTION_MIN_CONFIDENCE:
+                            db.add_entity(
+                                session_id=session_id,
+                                entity_type=entity_data["entity_type"],
+                                name=entity_data["name"],
+                                value=entity_data["value"],
+                                description=entity_data.get("description", ""),
+                                confidence=entity_data["confidence"]
+                            )
+                            logger.info(f"Stored entity: {entity_data['name']} ({entity_data['entity_type']})")
+
+                except Exception as e:
+                    # Don't fail the request if entity extraction fails
+                    logger.error(f"Entity extraction failed: {e}", exc_info=True)
+
     except Exception as e:
         # Get user-friendly error message
         error_msg, should_retry = get_user_friendly_error_message(e)
@@ -219,7 +264,7 @@ async def post(session_id: str, message: str):
         logger.error(f"Error in chat endpoint for session {session_id}: {e}", exc_info=True)
 
         # Add error message to conversation
-        add_message(session_id, "assistant", error_msg)
+        db.add_message(session_id, "assistant", error_msg)
 
     # Get the assistant's message (the last message in conversation)
     conversation = db.get_conversation(session_id)
@@ -326,8 +371,19 @@ async def post(session_id: str, message: str):
     # Get conversation history
     conversation = db.get_conversation(session_id)
 
+    # Build system prompt with knowledge graph context
+    system_prompt = SYSTEM_PROMPT
+    if config.ENABLE_ENTITY_EXTRACTION:
+        kg_context = db.build_context_from_entities(
+            session_id,
+            max_entities=config.ENTITY_CONTEXT_MAX_ENTITIES,
+            min_confidence=config.ENTITY_CONTEXT_MIN_CONFIDENCE
+        )
+        if kg_context:
+            system_prompt = f"{SYSTEM_PROMPT}\n\n{kg_context}"
+
     messages_for_api = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
@@ -368,6 +424,34 @@ async def post(session_id: str, message: str):
         # Add assistant response
         db.add_message(session_id, "assistant", assistant_message)
 
+        # Extract and store entities from this conversation
+        if config.ENABLE_ENTITY_EXTRACTION:
+            if should_extract_entities(message, assistant_message):
+                try:
+                    extracted = extract_entities_from_conversation(
+                        message,
+                        assistant_message,
+                        client,
+                        temperature=config.ENTITY_EXTRACTION_TEMPERATURE
+                    )
+
+                    # Store entities that meet confidence threshold
+                    for entity_data in extracted:
+                        if entity_data["confidence"] >= config.ENTITY_EXTRACTION_MIN_CONFIDENCE:
+                            db.add_entity(
+                                session_id=session_id,
+                                entity_type=entity_data["entity_type"],
+                                name=entity_data["name"],
+                                value=entity_data["value"],
+                                description=entity_data.get("description", ""),
+                                confidence=entity_data["confidence"]
+                            )
+                            logger.info(f"Stored entity: {entity_data['name']} ({entity_data['entity_type']})")
+
+                except Exception as e:
+                    # Don't fail the request if entity extraction fails
+                    logger.error(f"Entity extraction failed: {e}", exc_info=True)
+
     except Exception as e:
         # Get user-friendly error message
         error_msg, should_retry = get_user_friendly_error_message(e)
@@ -376,7 +460,7 @@ async def post(session_id: str, message: str):
         logger.error(f"Error in send-button endpoint for session {session_id}: {e}", exc_info=True)
 
         # Add error message to conversation
-        add_message(session_id, "assistant", error_msg)
+        db.add_message(session_id, "assistant", error_msg)
 
     # Get the assistant's message (the last message in conversation)
     conversation = db.get_conversation(session_id)

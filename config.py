@@ -46,6 +46,25 @@ DATABASE_RETENTION_DAYS: int = 30
 """Number of days to retain old messages (for maintenance)"""
 
 # ============================================================================
+# Knowledge Graph / Entity Extraction Configuration
+# ============================================================================
+
+ENABLE_ENTITY_EXTRACTION: bool = True
+"""Enable automatic entity extraction from conversations"""
+
+ENTITY_EXTRACTION_MIN_CONFIDENCE: float = 0.7
+"""Minimum confidence threshold for storing extracted entities"""
+
+ENTITY_CONTEXT_MAX_ENTITIES: int = 20
+"""Maximum number of entities to include in context"""
+
+ENTITY_CONTEXT_MIN_CONFIDENCE: float = 0.5
+"""Minimum confidence for entities to be included in context"""
+
+ENTITY_EXTRACTION_TEMPERATURE: float = 0.3
+"""Temperature for entity extraction (lower = more conservative)"""
+
+# ============================================================================
 # Groq API Configuration
 # ============================================================================
 

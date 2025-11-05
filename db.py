@@ -265,16 +265,354 @@ def delete_old_messages(days: int = 30) -> int:
 
 
 # ============================================================================
-# Knowledge Graph Operations (READY FOR PHASE 2)
+# Knowledge Graph Operations (PHASE 2 - ACTIVE)
 # ============================================================================
 
-# TODO: Implement in Phase 2
-# - extract_entities_from_message(message_id: int) -> list[Entity]
-# - add_entity(session_id: str, entity_type: str, name: str, value: str) -> Entity
-# - get_entities(session_id: str, entity_type: Optional[str] = None) -> list[Entity]
-# - add_relationship(entity1_id: int, entity2_id: int, rel_type: str) -> Relationship
-# - get_relationships(entity_id: int) -> list[Relationship]
-# - build_context_from_entities(session_id: str) -> str
+def add_entity(
+    session_id: str,
+    entity_type: str,
+    name: str,
+    value: str,
+    description: str = "",
+    confidence: float = 1.0
+) -> Entity:
+    """
+    Add or update an entity in the knowledge graph.
+
+    If an entity with the same name already exists for this session,
+    update its last_mentioned timestamp and increment mention_count.
+
+    Args:
+        session_id: The session identifier
+        entity_type: Type of entity (person, date, fact, preference, relationship, location)
+        name: Entity name (e.g., "John", "Mom's birthday")
+        value: Entity value (e.g., "brother", "June 15")
+        description: Optional context/notes
+        confidence: Extraction confidence (0.0-1.0)
+
+    Returns:
+        The created or updated Entity object
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    # Check if entity already exists
+    existing = db.execute(
+        "SELECT * FROM entities WHERE session_id = ? AND name = ?",
+        [session_id, name]
+    ).fetchone()
+
+    if existing:
+        # Update existing entity
+        entity_id = existing[0]
+        db.execute(
+            """UPDATE entities
+               SET value = ?, description = ?, confidence = ?,
+                   last_mentioned = ?, mention_count = mention_count + 1
+               WHERE id = ?""",
+            [value, description, confidence, timestamp, entity_id]
+        )
+        # Return updated entity
+        return entities.get(entity_id)
+    else:
+        # Create new entity
+        entity = entities.insert(
+            session_id=session_id,
+            entity_type=entity_type,
+            name=name,
+            value=value,
+            description=description,
+            confidence=confidence,
+            created_at=timestamp,
+            last_mentioned=timestamp,
+            mention_count=1
+        )
+        return entity
+
+
+def get_entities(
+    session_id: str,
+    entity_type: Optional[str] = None,
+    min_confidence: float = 0.0
+) -> list[dict]:
+    """
+    Retrieve entities from the knowledge graph.
+
+    Args:
+        session_id: The session identifier
+        entity_type: Optional filter by entity type
+        min_confidence: Minimum confidence threshold (default: 0.0)
+
+    Returns:
+        List of entity dictionaries
+    """
+    query = """
+        SELECT id, entity_type, name, value, description, confidence,
+               created_at, last_mentioned, mention_count
+        FROM entities
+        WHERE session_id = ? AND confidence >= ?
+    """
+    params = [session_id, min_confidence]
+
+    if entity_type:
+        query += " AND entity_type = ?"
+        params.append(entity_type)
+
+    query += " ORDER BY mention_count DESC, last_mentioned DESC"
+
+    results = db.execute(query, params).fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "entity_type": row[1],
+            "name": row[2],
+            "value": row[3],
+            "description": row[4],
+            "confidence": row[5],
+            "created_at": row[6],
+            "last_mentioned": row[7],
+            "mention_count": row[8]
+        }
+        for row in results
+    ]
+
+
+def add_relationship(
+    session_id: str,
+    entity1_id: int,
+    entity2_id: int,
+    relationship_type: str,
+    description: str = "",
+    confidence: float = 1.0
+) -> Relationship:
+    """
+    Add a relationship between two entities.
+
+    Args:
+        session_id: The session identifier
+        entity1_id: ID of first entity
+        entity2_id: ID of second entity
+        relationship_type: Type of relationship (family, works_with, located_in, likes, birthday)
+        description: Human-readable description (e.g., "is brother of", "birthday is")
+        confidence: Extraction confidence (0.0-1.0)
+
+    Returns:
+        The created Relationship object
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    relationship = relationships.insert(
+        session_id=session_id,
+        entity1_id=entity1_id,
+        entity2_id=entity2_id,
+        relationship_type=relationship_type,
+        description=description,
+        confidence=confidence,
+        created_at=timestamp
+    )
+
+    return relationship
+
+
+def get_relationships(
+    entity_id: int,
+    min_confidence: float = 0.0
+) -> list[dict]:
+    """
+    Get all relationships for a given entity.
+
+    Args:
+        entity_id: The entity ID to find relationships for
+        min_confidence: Minimum confidence threshold
+
+    Returns:
+        List of relationship dictionaries with related entity info
+    """
+    query = """
+        SELECT r.id, r.session_id, r.entity1_id, r.entity2_id,
+               r.relationship_type, r.description, r.confidence, r.created_at,
+               e1.name as entity1_name, e1.value as entity1_value,
+               e2.name as entity2_name, e2.value as entity2_value
+        FROM relationships r
+        JOIN entities e1 ON r.entity1_id = e1.id
+        JOIN entities e2 ON r.entity2_id = e2.id
+        WHERE (r.entity1_id = ? OR r.entity2_id = ?)
+          AND r.confidence >= ?
+        ORDER BY r.created_at DESC
+    """
+
+    results = db.execute(query, [entity_id, entity_id, min_confidence]).fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "session_id": row[1],
+            "entity1_id": row[2],
+            "entity2_id": row[3],
+            "relationship_type": row[4],
+            "description": row[5],
+            "confidence": row[6],
+            "created_at": row[7],
+            "entity1_name": row[8],
+            "entity1_value": row[9],
+            "entity2_name": row[10],
+            "entity2_value": row[11]
+        }
+        for row in results
+    ]
+
+
+def add_entity_mention(
+    entity_id: int,
+    message_id: int,
+    mention_text: str
+) -> EntityMention:
+    """
+    Record that an entity was mentioned in a message.
+
+    Args:
+        entity_id: ID of the entity
+        message_id: ID of the message
+        mention_text: Exact text from conversation
+
+    Returns:
+        The created EntityMention object
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    mention = entity_mentions.insert(
+        entity_id=entity_id,
+        message_id=message_id,
+        mention_text=mention_text,
+        extracted_at=timestamp
+    )
+
+    return mention
+
+
+def build_context_from_entities(
+    session_id: str,
+    max_entities: int = 20,
+    min_confidence: float = 0.5
+) -> str:
+    """
+    Build a context string from the knowledge graph to inject into prompts.
+
+    Args:
+        session_id: The session identifier
+        max_entities: Maximum number of entities to include
+        min_confidence: Minimum confidence threshold
+
+    Returns:
+        Formatted context string for system prompt
+    """
+    entities_list = get_entities(session_id, min_confidence=min_confidence)
+
+    if not entities_list:
+        return ""
+
+    # Limit to most relevant entities (by mention count and recency)
+    entities_list = entities_list[:max_entities]
+
+    # Build context string
+    context_parts = ["# Knowledge Graph Context\n"]
+    context_parts.append("The following facts about the user have been learned from previous conversations:\n")
+
+    # Group by entity type
+    by_type = {}
+    for entity in entities_list:
+        entity_type = entity["entity_type"]
+        if entity_type not in by_type:
+            by_type[entity_type] = []
+        by_type[entity_type].append(entity)
+
+    # Format each type
+    type_labels = {
+        "person": "People",
+        "date": "Important Dates",
+        "fact": "Facts",
+        "preference": "Preferences",
+        "relationship": "Relationships",
+        "location": "Locations"
+    }
+
+    for entity_type, type_entities in by_type.items():
+        label = type_labels.get(entity_type, entity_type.capitalize())
+        context_parts.append(f"\n## {label}")
+
+        for entity in type_entities:
+            name = entity["name"]
+            value = entity["value"]
+            description = entity["description"]
+
+            if description:
+                context_parts.append(f"- {name}: {value} ({description})")
+            else:
+                context_parts.append(f"- {name}: {value}")
+
+    context_parts.append("\nUse this information naturally when relevant to the conversation.")
+
+    return "\n".join(context_parts)
+
+
+def delete_entity(entity_id: int) -> int:
+    """
+    Delete an entity and all associated relationships and mentions.
+
+    Args:
+        entity_id: The entity ID to delete
+
+    Returns:
+        Number of entities deleted (should be 1)
+    """
+    # Delete associated entity mentions
+    db.execute("DELETE FROM entity_mentions WHERE entity_id = ?", [entity_id])
+
+    # Delete associated relationships
+    db.execute(
+        "DELETE FROM relationships WHERE entity1_id = ? OR entity2_id = ?",
+        [entity_id, entity_id]
+    )
+
+    # Delete the entity
+    db.execute("DELETE FROM entities WHERE id = ?", [entity_id])
+
+    return 1
+
+
+def get_entity_by_name(session_id: str, name: str) -> Optional[dict]:
+    """
+    Get an entity by name for a specific session.
+
+    Args:
+        session_id: The session identifier
+        name: The entity name to search for
+
+    Returns:
+        Entity dictionary or None if not found
+    """
+    result = db.execute(
+        """SELECT id, entity_type, name, value, description, confidence,
+                  created_at, last_mentioned, mention_count
+           FROM entities
+           WHERE session_id = ? AND name = ?""",
+        [session_id, name]
+    ).fetchone()
+
+    if not result:
+        return None
+
+    return {
+        "id": result[0],
+        "entity_type": result[1],
+        "name": result[2],
+        "value": result[3],
+        "description": result[4],
+        "confidence": result[5],
+        "created_at": result[6],
+        "last_mentioned": result[7],
+        "mention_count": result[8]
+    }
 
 # ============================================================================
 # Database Utilities
