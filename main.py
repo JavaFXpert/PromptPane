@@ -1405,10 +1405,13 @@ RULES:
 
 @rt("/clear/{session_id}")
 def post(session_id: str):
-    """Clear conversation history"""
+    """Clear conversation history and return empty chat state"""
     if session_id in conversations:
         conversations[session_id] = []
-    return Div(
+
+    # Return the same structure as initial load (empty messages + scroll-anchor)
+    # This matches what ChatInterface creates for the #chat-messages div
+    return [
         Div(
             DivCentered(
                 UkIcon("message-circle", height=48, width=48, cls=TextT.muted),
@@ -1417,11 +1420,10 @@ def post(session_id: str):
             H4("No messages yet", cls=TextT.center),
             P("Start a conversation by typing a message below.",
               cls=(TextT.muted, TextT.center)),
-            cls="space-y-2"
+            cls="space-y-2 flex items-center justify-center h-full"
         ),
-        Div(id="scroll-anchor"),  # Essential for optimistic UI to work!
-        cls="flex items-center justify-center h-full"
-    )
+        Div(id="scroll-anchor")
+    ]
 
 @rt("/send-button/{session_id}")
 async def post(session_id: str, message: str):
