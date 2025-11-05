@@ -312,31 +312,39 @@ def parse_mui_tags(content):
 # Optimistic UI JavaScript Helpers - DRY principle for interactive components
 # ============================================================================
 
-def get_optimistic_ui_onclick(value_expression):
+def get_optimistic_ui_onclick(value_source='this.dataset.value'):
     """
     Generate onclick JavaScript for optimistic UI pattern.
 
+    Security: Uses data attributes to avoid XSS vulnerabilities from string interpolation.
+
     Args:
-        value_expression: JavaScript expression that evaluates to the message value.
-                         Examples: "'clicked button'", "document.getElementById('slider-1').value"
+        value_source: JavaScript expression to get the message value safely.
+                     Default: 'this.dataset.value' (reads from data-value attribute)
+                     Examples: "this.dataset.value", "document.getElementById('slider-1').value"
 
     Returns:
         String containing the complete onclick JavaScript handler
     """
     return f"""
-        const msg = {value_expression};
+        const msg = {value_source};
         const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-        const userMsg = `
-            <div class="mb-4">
-                <div class="flex gap-3 justify-end">
-                    <div class="space-y-1">
-                        <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                        <small class="text-muted-foreground mt-1">${{now}}</small>
-                    </div>
+
+        // Create user message with safe HTML escaping
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.className = 'mb-4';
+        userMsgDiv.innerHTML = `
+            <div class="flex gap-3 justify-end">
+                <div class="space-y-1">
+                    <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground"></div>
+                    <small class="text-muted-foreground mt-1">${{now}}</small>
                 </div>
             </div>
         `;
-        document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+        // Safely set text content (prevents XSS)
+        userMsgDiv.querySelector('.rounded-lg').textContent = msg;
+        document.getElementById('scroll-anchor').insertAdjacentElement('beforebegin', userMsgDiv);
+
         const loadingMsg = `
             <div class="mb-4" id="loading-indicator">
                 <div class="flex gap-3 justify-start">
@@ -391,6 +399,7 @@ def generate_mui_button_group(options, session_id):
         label = opt['label'] or opt['value']
         value = opt['value']
         # Create button that sends message via HTMX with optimistic UI
+        # Security: Use data-value attribute to safely store value (prevents XSS)
         btn = Button(
             label,
             cls=ButtonT.primary + " mui-button",
@@ -399,7 +408,8 @@ def generate_mui_button_group(options, session_id):
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
             hx_on__after_swap=get_optimistic_ui_after_swap(),
-            onclick=get_optimistic_ui_onclick(f"'{value}'")
+            onclick=get_optimistic_ui_onclick(),  # Uses default this.dataset.value
+            data_value=value  # FastHTML properly escapes this attribute
         )
         buttons.append(btn)
 
@@ -487,7 +497,8 @@ def generate_mui_slider(tag_info, session_id):
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
             hx_on__after_swap=get_optimistic_ui_after_swap(),
-            onclick=get_optimistic_ui_onclick(f"document.getElementById('{slider_id}').value")
+            # Value read from DOM element (safe - no user input interpolation)
+            onclick=get_optimistic_ui_onclick(value_source=f"document.getElementById('{slider_id}').value")
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -541,7 +552,10 @@ def generate_mui_checkboxes(tag_info, session_id):
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
             hx_on__after_swap=get_optimistic_ui_after_swap(),
-            onclick=get_optimistic_ui_onclick(f"Array.from(document.querySelectorAll('input[name=\"{group_id}\"]:checked')).map(cb => cb.value).join(', ') || 'none selected'")
+            # Value read from checked checkboxes (safe - values come from controlled options)
+            onclick=get_optimistic_ui_onclick(
+                value_source=f"Array.from(document.querySelectorAll('input[name=\"{group_id}\"]:checked')).map(cb => cb.value).join(', ') || 'none selected'"
+            )
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -604,7 +618,10 @@ def generate_mui_rating(tag_info, session_id):
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
             hx_on__after_swap=get_optimistic_ui_after_swap(),
-            onclick=get_optimistic_ui_onclick(f"document.querySelector('input[name=\"{rating_id}\"]:checked')?.value || '0'")
+            # Value is numeric rating from radio buttons (safe - controlled values)
+            onclick=get_optimistic_ui_onclick(
+                value_source=f"document.querySelector('input[name=\"{rating_id}\"]:checked')?.value || '0'"
+            )
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -644,7 +661,10 @@ def generate_mui_toggle(tag_info, session_id):
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
             hx_on__after_swap=get_optimistic_ui_after_swap(),
-            onclick=get_optimistic_ui_onclick(f"document.getElementById('{toggle_id}').checked ? 'yes' : 'no'")
+            # Value is yes/no from toggle state (safe - controlled values)
+            onclick=get_optimistic_ui_onclick(
+                value_source=f"document.getElementById('{toggle_id}').checked ? 'yes' : 'no'"
+            )
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -776,7 +796,10 @@ def generate_mui_date(tag_info, session_id):
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
             hx_on__after_swap=get_optimistic_ui_after_swap(),
-            onclick=get_optimistic_ui_onclick(f"document.getElementById('{date_id}').value || 'no date selected'")
+            # Value from date input (safe - browser-controlled format)
+            onclick=get_optimistic_ui_onclick(
+                value_source=f"document.getElementById('{date_id}').value || 'no date selected'"
+            )
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
