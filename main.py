@@ -972,6 +972,22 @@ def process_mui_tags(content, session_id):
 
     return components, result_content
 
+def EmptyState():
+    """Render the empty state message shown when there are no messages"""
+    return Div(
+        Div(
+            DivCentered(
+                UkIcon("message-circle", height=48, width=48, cls=TextT.muted),
+                cls="mb-4"
+            ),
+            H4("No messages yet", cls=TextT.center + " mb-2"),
+            P("Start a conversation by typing a message below.",
+              cls=(TextT.muted, TextT.center)),
+            cls="space-y-3 text-center"
+        ),
+        cls="flex items-center justify-center h-full"
+    )
+
 def ChatMessage(role, content, timestamp=None, session_id="default"):
     """Render a chat message bubble"""
     is_user = role == "user"
@@ -1041,11 +1057,21 @@ def ChatInterface(session_id="default"):
     """Main chat interface"""
     conversation = get_conversation(session_id)
 
-    # Chat messages container
+    # Chat messages container - show empty state if no messages
+    if conversation:
+        message_content = [
+            *[ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
+              for msg in conversation],
+            Div(id="scroll-anchor")
+        ]
+    else:
+        message_content = [
+            EmptyState(),
+            Div(id="scroll-anchor")
+        ]
+
     messages = Div(
-        *[ChatMessage(msg["role"], msg["content"], msg.get("timestamp"), session_id)
-          for msg in conversation],
-        Div(id="scroll-anchor"),
+        *message_content,
         id="chat-messages",
         cls="flex-1 overflow-y-auto p-6 space-y-2"
     )
@@ -1409,22 +1435,9 @@ def post(session_id: str):
     if session_id in conversations:
         conversations[session_id] = []
 
-    # Return the same structure as initial load (empty messages + scroll-anchor)
-    # This matches what ChatInterface creates for the #chat-messages div
+    # Return the same structure as initial load (reuse EmptyState function)
     return [
-        Div(
-            Div(
-                DivCentered(
-                    UkIcon("message-circle", height=48, width=48, cls=TextT.muted),
-                    cls="mb-4"
-                ),
-                H4("No messages yet", cls=TextT.center + " mb-2"),
-                P("Start a conversation by typing a message below.",
-                  cls=(TextT.muted, TextT.center)),
-                cls="space-y-3 text-center"
-            ),
-            cls="flex items-center justify-center h-full"
-        ),
+        EmptyState(),
         Div(id="scroll-anchor")
     ]
 
