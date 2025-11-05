@@ -1419,6 +1419,7 @@ def post(session_id: str):
               cls=(TextT.muted, TextT.center)),
             cls="space-y-2"
         ),
+        Div(id="scroll-anchor"),  # Essential for optimistic UI to work!
         cls="flex items-center justify-center h-full"
     )
 
