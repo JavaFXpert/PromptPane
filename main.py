@@ -72,6 +72,142 @@ def add_message(session_id, role, content):
     })
     return conversation
 
+# ============================================================================
+# System Prompt for LLM - Explains MUI tags and interactive components
+# ============================================================================
+
+SYSTEM_PROMPT = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
+
+IMPORTANT - ONE QUESTION AT A TIME: When asking questions with interactive components (buttons, checkboxes, sliders, rating, toggle, date picker), only ask ONE question at a time. Wait for the user's response before asking the next question. If the user requests multiple questions or says "then ask...", acknowledge that you will ask them one at a time, and only present the FIRST question now.
+
+LATEX SUPPORT: You can use LaTeX for mathematical formulas:
+- Inline math: $E = mc^2$ or \\(E = mc^2\\)
+- Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
+Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
+
+SLIDER INPUT: For numeric answers where user selects from a range, use sliders:
+<mui type="slider" min="0" max="100" step="1" value="50" label="Your question here">
+</mui>
+
+Slider example:
+"What number do you get when you add 27 and 15?
+<mui type="slider" min="0" max="100" step="1" value="40" label="Use the slider to select your answer:">
+</mui>"
+
+Use sliders when:
+- The answer is a number in a specific range
+- You want the user to select an integer value
+- The question asks for numeric input (not multiple choice text)
+
+CHECKBOXES: For "select all that apply" questions where multiple answers can be selected:
+<mui type="checkboxes" label="Which of these are programming languages?">
+<option value="python">Python</option>
+<option value="html">HTML</option>
+<option value="javascript">JavaScript</option>
+<option value="css">CSS</option>
+</mui>
+
+Use checkboxes when:
+- The user can select multiple correct answers
+- Questions ask "select all that apply" or "which of the following"
+- More than one option can be true
+
+RATING: For star ratings and satisfaction scores:
+<mui type="rating" label="How would you rate this movie?" max="5">
+</mui>
+
+Use ratings when:
+- Asking for subjective quality/satisfaction ratings
+- Reviews, feedback, or opinions on a scale
+- The max attribute sets the number of stars (default is 5)
+
+TOGGLE: For yes/no or on/off binary questions:
+<mui type="toggle" label="Enable notifications?">
+</mui>
+
+Use toggles when:
+- Simple binary choices (yes/no, on/off, true/false, enable/disable)
+- Settings or preferences
+- Questions with only two possible answers
+- User switches the toggle to their choice, then clicks submit
+
+IMAGE: To display images from URLs with optional captions:
+<mui type="image" src="https://example.com/image.jpg" caption="Optional caption text">
+</mui>
+
+Use images when:
+- Showing diagrams, charts, or visual examples
+- Providing visual context or explanations
+- Displaying examples, screenshots, or illustrations
+- The src attribute is required and must be a valid image URL
+- The caption attribute is optional
+
+VIDEO: To embed YouTube videos:
+<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Optional caption">
+</mui>
+
+Use videos when:
+- Demonstrating concepts with video tutorials
+- Showing examples or walkthroughs
+- Providing educational or explanatory content
+- The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
+- Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
+- The caption attribute is optional
+
+DATE PICKER: For selecting dates with a calendar interface:
+<mui type="date" label="Select your birth date" min="1900-01-01" max="2010-12-31">
+</mui>
+
+Use date picker when:
+- Asking for specific dates (birthdays, appointments, deadlines)
+- Scheduling or planning questions
+- Historical date references
+- Optional attributes: min (earliest date), max (latest date), value (default date)
+- Dates must be in YYYY-MM-DD format
+- User clicks the input to see a calendar interface
+
+FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
+
+How to create buttons:
+<mui type="buttons">
+<option value="answer1">Label 1</option>
+<option value="answer2">Label 2</option>
+</mui>
+
+MULTI-QUESTION QUIZ FORMAT - FOLLOW THIS EXACTLY:
+Question 1: What is 2+2?
+<mui type="buttons">
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+</mui>
+
+Question 2: What is Python?
+<mui type="buttons">
+<option value="snake">A snake</option>
+<option value="language">A programming language</option>
+<option value="food">A food</option>
+<option value="game">A game</option>
+</mui>
+
+Question 3: What does print() do?
+<mui type="buttons">
+<option value="prints">Prints to console</option>
+<option value="saves">Saves a file</option>
+<option value="deletes">Deletes data</option>
+<option value="calculates">Calculates math</option>
+</mui>
+
+RULES:
+1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
+2. For questions with multiple correct answers, use checkboxes instead of buttons
+3. For numeric answers in a range, use sliders
+4. For rating/satisfaction questions, use the rating component with stars
+5. For yes/no or binary questions, use toggles
+6. For free-form text answers, just ask the question - the user will type their answer in the main chat input
+7. When creating multiple questions, EACH ONE needs its own <mui> component"""
+
 def extract_citation_urls(chat_completion):
     """Extract URLs from browser_search tool results"""
     citation_urls = {}
@@ -172,6 +308,82 @@ def parse_mui_tags(content):
     parser.feed(content)
     return parser.mui_tags, content
 
+# ============================================================================
+# Optimistic UI JavaScript Helpers - DRY principle for interactive components
+# ============================================================================
+
+def get_optimistic_ui_onclick(value_expression):
+    """
+    Generate onclick JavaScript for optimistic UI pattern.
+
+    Args:
+        value_expression: JavaScript expression that evaluates to the message value.
+                         Examples: "'clicked button'", "document.getElementById('slider-1').value"
+
+    Returns:
+        String containing the complete onclick JavaScript handler
+    """
+    return f"""
+        const msg = {value_expression};
+        const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
+        const userMsg = `
+            <div class="mb-4">
+                <div class="flex gap-3 justify-end">
+                    <div class="space-y-1">
+                        <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
+                        <small class="text-muted-foreground mt-1">${{now}}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+        const loadingMsg = `
+            <div class="mb-4" id="loading-indicator">
+                <div class="flex gap-3 justify-start">
+                    <div class="space-y-1">
+                        <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                            <div class="flex items-center gap-2">
+                                <span>Assistant is typing</span>
+                                <span class="loading loading-dots loading-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+        setTimeout(() => {{
+            const anchor = document.getElementById('scroll-anchor');
+            if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
+        }}, 100);
+    """
+
+def get_optimistic_ui_after_swap():
+    """
+    Generate hx_on__after_swap JavaScript for cleanup after HTMX swap.
+
+    Returns:
+        String containing the complete after_swap JavaScript handler
+    """
+    return """
+        const loadingIndicator = document.getElementById('loading-indicator');
+        if (loadingIndicator) loadingIndicator.remove();
+        if (typeof renderMathInElement !== 'undefined') {
+            try {
+                renderMathInElement(document.getElementById('chat-messages'), {
+                    delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
+                    throwOnError: false
+                });
+            } catch(e) {}
+        }
+        setTimeout(() => {
+            const anchor = document.getElementById('scroll-anchor');
+            if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            const mainInput = document.getElementById('message-input');
+            if (mainInput) mainInput.focus();
+        }, 100);
+    """
+
 def generate_mui_button_group(options, session_id):
     """Generate MonsterUI button group from options"""
     buttons = []
@@ -186,58 +398,8 @@ def generate_mui_button_group(options, session_id):
             hx_vals=f'{{"message": "{value}"}}',
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
-            hx_on__after_swap="""
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-                if (typeof renderMathInElement !== 'undefined') {
-                    try {
-                        renderMathInElement(document.getElementById('chat-messages'), {
-                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
-                            throwOnError: false
-                        });
-                    } catch(e) {}
-                }
-                setTimeout(() => {
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    const mainInput = document.getElementById('message-input');
-                    if (mainInput) mainInput.focus();
-                }, 100);
-            """,
-            onclick=f"""
-                const msg = '{value}';
-                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-                const userMsg = `
-                    <div class="mb-4">
-                        <div class="flex gap-3 justify-end">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                                <small class="text-muted-foreground mt-1">${{now}}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
-                const loadingMsg = `
-                    <div class="mb-4" id="loading-indicator">
-                        <div class="flex gap-3 justify-start">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
-                                    <div class="flex items-center gap-2">
-                                        <span>Assistant is typing</span>
-                                        <span class="loading loading-dots loading-sm"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
-                setTimeout(() => {{
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
-                }}, 100);
-            """
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick(f"'{value}'")
         )
         buttons.append(btn)
 
@@ -324,58 +486,8 @@ def generate_mui_slider(tag_info, session_id):
             hx_vals=f"js:{{message: document.getElementById('{slider_id}').value}}",
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
-            hx_on__after_swap="""
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-                if (typeof renderMathInElement !== 'undefined') {
-                    try {
-                        renderMathInElement(document.getElementById('chat-messages'), {
-                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
-                            throwOnError: false
-                        });
-                    } catch(e) {}
-                }
-                setTimeout(() => {
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    const mainInput = document.getElementById('message-input');
-                    if (mainInput) mainInput.focus();
-                }, 100);
-            """,
-            onclick=f"""
-                const msg = document.getElementById('{slider_id}').value;
-                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-                const userMsg = `
-                    <div class="mb-4">
-                        <div class="flex gap-3 justify-end">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                                <small class="text-muted-foreground mt-1">${{now}}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
-                const loadingMsg = `
-                    <div class="mb-4" id="loading-indicator">
-                        <div class="flex gap-3 justify-start">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
-                                    <div class="flex items-center gap-2">
-                                        <span>Assistant is typing</span>
-                                        <span class="loading loading-dots loading-sm"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
-                setTimeout(() => {{
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
-                }}, 100);
-            """
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick(f"document.getElementById('{slider_id}').value")
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -428,60 +540,8 @@ def generate_mui_checkboxes(tag_info, session_id):
             }}""",
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
-            hx_on__after_swap="""
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-                if (typeof renderMathInElement !== 'undefined') {
-                    try {
-                        renderMathInElement(document.getElementById('chat-messages'), {
-                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
-                            throwOnError: false
-                        });
-                    } catch(e) {}
-                }
-                setTimeout(() => {
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    const mainInput = document.getElementById('message-input');
-                    if (mainInput) mainInput.focus();
-                }, 100);
-            """,
-            onclick=f"""
-                const msg = Array.from(document.querySelectorAll('input[name="{group_id}"]:checked'))
-                    .map(cb => cb.value)
-                    .join(', ') || 'none selected';
-                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-                const userMsg = `
-                    <div class="mb-4">
-                        <div class="flex gap-3 justify-end">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                                <small class="text-muted-foreground mt-1">${{now}}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
-                const loadingMsg = `
-                    <div class="mb-4" id="loading-indicator">
-                        <div class="flex gap-3 justify-start">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
-                                    <div class="flex items-center gap-2">
-                                        <span>Assistant is typing</span>
-                                        <span class="loading loading-dots loading-sm"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
-                setTimeout(() => {{
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
-                }}, 100);
-            """
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick(f"Array.from(document.querySelectorAll('input[name=\"{group_id}\"]:checked')).map(cb => cb.value).join(', ') || 'none selected'")
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -543,58 +603,8 @@ def generate_mui_rating(tag_info, session_id):
             }}""",
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
-            hx_on__after_swap="""
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-                if (typeof renderMathInElement !== 'undefined') {
-                    try {
-                        renderMathInElement(document.getElementById('chat-messages'), {
-                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
-                            throwOnError: false
-                        });
-                    } catch(e) {}
-                }
-                setTimeout(() => {
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    const mainInput = document.getElementById('message-input');
-                    if (mainInput) mainInput.focus();
-                }, 100);
-            """,
-            onclick=f"""
-                const msg = document.querySelector('input[name="{rating_id}"]:checked')?.value || '0';
-                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-                const userMsg = `
-                    <div class="mb-4">
-                        <div class="flex gap-3 justify-end">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                                <small class="text-muted-foreground mt-1">${{now}}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
-                const loadingMsg = `
-                    <div class="mb-4" id="loading-indicator">
-                        <div class="flex gap-3 justify-start">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
-                                    <div class="flex items-center gap-2">
-                                        <span>Assistant is typing</span>
-                                        <span class="loading loading-dots loading-sm"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
-                setTimeout(() => {{
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
-                }}, 100);
-            """
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick(f"document.querySelector('input[name=\"{rating_id}\"]:checked')?.value || '0'")
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -633,58 +643,8 @@ def generate_mui_toggle(tag_info, session_id):
             hx_vals=f"""js:{{message: document.getElementById('{toggle_id}').checked ? 'yes' : 'no'}}""",
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
-            hx_on__after_swap="""
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-                if (typeof renderMathInElement !== 'undefined') {
-                    try {
-                        renderMathInElement(document.getElementById('chat-messages'), {
-                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
-                            throwOnError: false
-                        });
-                    } catch(e) {}
-                }
-                setTimeout(() => {
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    const mainInput = document.getElementById('message-input');
-                    if (mainInput) mainInput.focus();
-                }, 100);
-            """,
-            onclick=f"""
-                const msg = document.getElementById('{toggle_id}').checked ? 'yes' : 'no';
-                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-                const userMsg = `
-                    <div class="mb-4">
-                        <div class="flex gap-3 justify-end">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                                <small class="text-muted-foreground mt-1">${{now}}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
-                const loadingMsg = `
-                    <div class="mb-4" id="loading-indicator">
-                        <div class="flex gap-3 justify-start">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
-                                    <div class="flex items-center gap-2">
-                                        <span>Assistant is typing</span>
-                                        <span class="loading loading-dots loading-sm"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
-                setTimeout(() => {{
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
-                }}, 100);
-            """
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick(f"document.getElementById('{toggle_id}').checked ? 'yes' : 'no'")
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -815,58 +775,8 @@ def generate_mui_date(tag_info, session_id):
             hx_vals=f"js:{{message: document.getElementById('{date_id}').value || 'no date selected'}}",
             hx_target="#scroll-anchor",
             hx_swap="beforebegin",
-            hx_on__after_swap="""
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-                if (typeof renderMathInElement !== 'undefined') {
-                    try {
-                        renderMathInElement(document.getElementById('chat-messages'), {
-                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\[', right: '\\\\]', display: true}, {left: '\\\\(', right: '\\\\)', display: false}],
-                            throwOnError: false
-                        });
-                    } catch(e) {}
-                }
-                setTimeout(() => {
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    const mainInput = document.getElementById('message-input');
-                    if (mainInput) mainInput.focus();
-                }, 100);
-            """,
-            onclick=f"""
-                const msg = document.getElementById('{date_id}').value || 'no date selected';
-                const now = new Date().toLocaleTimeString('en-US', {{hour: 'numeric', minute: '2-digit', hour12: true}});
-                const userMsg = `
-                    <div class="mb-4">
-                        <div class="flex gap-3 justify-end">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${{msg}}</div>
-                                <small class="text-muted-foreground mt-1">${{now}}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
-                const loadingMsg = `
-                    <div class="mb-4" id="loading-indicator">
-                        <div class="flex gap-3 justify-start">
-                            <div class="space-y-1">
-                                <div class="rounded-lg p-4 max-w-2xl bg-muted">
-                                    <div class="flex items-center gap-2">
-                                        <span>Assistant is typing</span>
-                                        <span class="loading loading-dots loading-sm"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
-                setTimeout(() => {{
-                    const anchor = document.getElementById('scroll-anchor');
-                    if (anchor) anchor.scrollIntoView({{ behavior: 'smooth', block: 'end' }});
-                }}, 100);
-            """
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick(f"document.getElementById('{date_id}').value || 'no date selected'")
         ),
 
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
@@ -1253,141 +1163,8 @@ async def post(session_id: str, message: str):
     # Get conversation history for context
     conversation = get_conversation(session_id)
 
-    # System prompt explaining MUI tags
-    system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
-
-IMPORTANT - ONE QUESTION AT A TIME: When asking questions with interactive components (buttons, checkboxes, sliders, rating, toggle, date picker), only ask ONE question at a time. Wait for the user's response before asking the next question. If the user requests multiple questions or says "then ask...", acknowledge that you will ask them one at a time, and only present the FIRST question now.
-
-LATEX SUPPORT: You can use LaTeX for mathematical formulas:
-- Inline math: $E = mc^2$ or \\(E = mc^2\\)
-- Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
-Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
-
-SLIDER INPUT: For numeric answers where user selects from a range, use sliders:
-<mui type="slider" min="0" max="100" step="1" value="50" label="Your question here">
-</mui>
-
-Slider example:
-"What number do you get when you add 27 and 15?
-<mui type="slider" min="0" max="100" step="1" value="40" label="Use the slider to select your answer:">
-</mui>"
-
-Use sliders when:
-- The answer is a number in a specific range
-- You want the user to select an integer value
-- The question asks for numeric input (not multiple choice text)
-
-CHECKBOXES: For "select all that apply" questions where multiple answers can be selected:
-<mui type="checkboxes" label="Which of these are programming languages?">
-<option value="python">Python</option>
-<option value="html">HTML</option>
-<option value="javascript">JavaScript</option>
-<option value="css">CSS</option>
-</mui>
-
-Use checkboxes when:
-- The user can select multiple correct answers
-- Questions ask "select all that apply" or "which of the following"
-- More than one option can be true
-
-RATING: For star ratings and satisfaction scores:
-<mui type="rating" label="How would you rate this movie?" max="5">
-</mui>
-
-Use ratings when:
-- Asking for subjective quality/satisfaction ratings
-- Reviews, feedback, or opinions on a scale
-- The max attribute sets the number of stars (default is 5)
-
-TOGGLE: For yes/no or on/off binary questions:
-<mui type="toggle" label="Enable notifications?">
-</mui>
-
-Use toggles when:
-- Simple binary choices (yes/no, on/off, true/false, enable/disable)
-- Settings or preferences
-- Questions with only two possible answers
-- User switches the toggle to their choice, then clicks submit
-
-IMAGE: To display images from URLs with optional captions:
-<mui type="image" src="https://example.com/image.jpg" caption="Optional caption text">
-</mui>
-
-Use images when:
-- Showing diagrams, charts, or visual examples
-- Providing visual context or explanations
-- Displaying examples, screenshots, or illustrations
-- The src attribute is required and must be a valid image URL
-- The caption attribute is optional
-
-VIDEO: To embed YouTube videos:
-<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Optional caption">
-</mui>
-
-Use videos when:
-- Demonstrating concepts with video tutorials
-- Showing examples or walkthroughs
-- Providing educational or explanatory content
-- The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
-- Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
-- The caption attribute is optional
-
-DATE PICKER: For selecting dates with a calendar interface:
-<mui type="date" label="Select your birth date" min="1900-01-01" max="2010-12-31">
-</mui>
-
-Use date picker when:
-- Asking for specific dates (birthdays, appointments, deadlines)
-- Scheduling or planning questions
-- Historical date references
-- Optional attributes: min (earliest date), max (latest date), value (default date)
-- Dates must be in YYYY-MM-DD format
-- User clicks the input to see a calendar interface
-
-FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
-
-How to create buttons:
-<mui type="buttons">
-<option value="answer1">Label 1</option>
-<option value="answer2">Label 2</option>
-</mui>
-
-MULTI-QUESTION QUIZ FORMAT - FOLLOW THIS EXACTLY:
-Question 1: What is 2+2?
-<mui type="buttons">
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-</mui>
-
-Question 2: What is Python?
-<mui type="buttons">
-<option value="snake">A snake</option>
-<option value="language">A programming language</option>
-<option value="food">A food</option>
-<option value="game">A game</option>
-</mui>
-
-Question 3: What does print() do?
-<mui type="buttons">
-<option value="prints">Prints to console</option>
-<option value="saves">Saves a file</option>
-<option value="deletes">Deletes data</option>
-<option value="calculates">Calculates math</option>
-</mui>
-
-RULES:
-1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
-2. For questions with multiple correct answers, use checkboxes instead of buttons
-3. For numeric answers in a range, use sliders
-4. For rating/satisfaction questions, use the rating component with stars
-5. For yes/no or binary questions, use toggles
-6. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-7. When creating multiple questions, EACH ONE needs its own <mui> component"""
-
     messages_for_api = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": SYSTEM_PROMPT},
         *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
@@ -1450,141 +1227,8 @@ async def post(session_id: str, message: str):
     # Get conversation history
     conversation = get_conversation(session_id)
 
-    # System prompt explaining MUI tags
-    system_prompt = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
-
-IMPORTANT - ONE QUESTION AT A TIME: When asking questions with interactive components (buttons, checkboxes, sliders, rating, toggle, date picker), only ask ONE question at a time. Wait for the user's response before asking the next question. If the user requests multiple questions or says "then ask...", acknowledge that you will ask them one at a time, and only present the FIRST question now.
-
-LATEX SUPPORT: You can use LaTeX for mathematical formulas:
-- Inline math: $E = mc^2$ or \\(E = mc^2\\)
-- Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
-Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
-
-SLIDER INPUT: For numeric answers where user selects from a range, use sliders:
-<mui type="slider" min="0" max="100" step="1" value="50" label="Your question here">
-</mui>
-
-Slider example:
-"What number do you get when you add 27 and 15?
-<mui type="slider" min="0" max="100" step="1" value="40" label="Use the slider to select your answer:">
-</mui>"
-
-Use sliders when:
-- The answer is a number in a specific range
-- You want the user to select an integer value
-- The question asks for numeric input (not multiple choice text)
-
-CHECKBOXES: For "select all that apply" questions where multiple answers can be selected:
-<mui type="checkboxes" label="Which of these are programming languages?">
-<option value="python">Python</option>
-<option value="html">HTML</option>
-<option value="javascript">JavaScript</option>
-<option value="css">CSS</option>
-</mui>
-
-Use checkboxes when:
-- The user can select multiple correct answers
-- Questions ask "select all that apply" or "which of the following"
-- More than one option can be true
-
-RATING: For star ratings and satisfaction scores:
-<mui type="rating" label="How would you rate this movie?" max="5">
-</mui>
-
-Use ratings when:
-- Asking for subjective quality/satisfaction ratings
-- Reviews, feedback, or opinions on a scale
-- The max attribute sets the number of stars (default is 5)
-
-TOGGLE: For yes/no or on/off binary questions:
-<mui type="toggle" label="Enable notifications?">
-</mui>
-
-Use toggles when:
-- Simple binary choices (yes/no, on/off, true/false, enable/disable)
-- Settings or preferences
-- Questions with only two possible answers
-- User switches the toggle to their choice, then clicks submit
-
-IMAGE: To display images from URLs with optional captions:
-<mui type="image" src="https://example.com/image.jpg" caption="Optional caption text">
-</mui>
-
-Use images when:
-- Showing diagrams, charts, or visual examples
-- Providing visual context or explanations
-- Displaying examples, screenshots, or illustrations
-- The src attribute is required and must be a valid image URL
-- The caption attribute is optional
-
-VIDEO: To embed YouTube videos:
-<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Optional caption">
-</mui>
-
-Use videos when:
-- Demonstrating concepts with video tutorials
-- Showing examples or walkthroughs
-- Providing educational or explanatory content
-- The url attribute must be a valid YouTube URL (youtube.com or youtu.be)
-- Supports both formats: youtube.com/watch?v=ID and youtu.be/ID
-- The caption attribute is optional
-
-DATE PICKER: For selecting dates with a calendar interface:
-<mui type="date" label="Select your birth date" min="1900-01-01" max="2010-12-31">
-</mui>
-
-Use date picker when:
-- Asking for specific dates (birthdays, appointments, deadlines)
-- Scheduling or planning questions
-- Historical date references
-- Optional attributes: min (earliest date), max (latest date), value (default date)
-- Dates must be in YYYY-MM-DD format
-- User clicks the input to see a calendar interface
-
-FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
-
-How to create buttons:
-<mui type="buttons">
-<option value="answer1">Label 1</option>
-<option value="answer2">Label 2</option>
-</mui>
-
-MULTI-QUESTION QUIZ FORMAT - FOLLOW THIS EXACTLY:
-Question 1: What is 2+2?
-<mui type="buttons">
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-</mui>
-
-Question 2: What is Python?
-<mui type="buttons">
-<option value="snake">A snake</option>
-<option value="language">A programming language</option>
-<option value="food">A food</option>
-<option value="game">A game</option>
-</mui>
-
-Question 3: What does print() do?
-<mui type="buttons">
-<option value="prints">Prints to console</option>
-<option value="saves">Saves a file</option>
-<option value="deletes">Deletes data</option>
-<option value="calculates">Calculates math</option>
-</mui>
-
-RULES:
-1. EVERY multiple choice question MUST have <mui> buttons immediately after the question text
-2. For questions with multiple correct answers, use checkboxes instead of buttons
-3. For numeric answers in a range, use sliders
-4. For rating/satisfaction questions, use the rating component with stars
-5. For yes/no or binary questions, use toggles
-6. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-7. When creating multiple questions, EACH ONE needs its own <mui> component"""
-
     messages_for_api = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": SYSTEM_PROMPT},
         *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
