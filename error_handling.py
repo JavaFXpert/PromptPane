@@ -9,6 +9,11 @@ This module contains error handling functionality including:
 
 import time
 import logging
+from typing import Callable, Optional, Any
+from collections.abc import Callable as CallableType
+
+# Import configuration
+import config
 
 # Import debug commands from constants
 from constants import DEBUG_COMMANDS
@@ -19,8 +24,8 @@ from constants import DEBUG_COMMANDS
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=getattr(logging, config.LOG_LEVEL),
+    format=config.LOG_FORMAT
 )
 logger = logging.getLogger(__name__)
 
@@ -28,7 +33,7 @@ logger = logging.getLogger(__name__)
 # Error Message Formatting
 # ============================================================================
 
-def get_user_friendly_error_message(error):
+def get_user_friendly_error_message(error: Exception) -> tuple[str, bool]:
     """
     Convert technical errors into user-friendly messages.
 
@@ -38,7 +43,7 @@ def get_user_friendly_error_message(error):
     Returns:
         Tuple of (user_message, should_retry)
     """
-    error_str = str(error).lower()
+    error_str: str = str(error).lower()
 
     # Rate limiting errors
     if 'rate limit' in error_str or '429' in error_str:
@@ -129,7 +134,12 @@ def get_user_friendly_error_message(error):
 # Retry Logic
 # ============================================================================
 
-def retry_with_exponential_backoff(func, max_retries=3, initial_delay=1, max_delay=10):
+def retry_with_exponential_backoff(
+    func: Callable[[], Any],
+    max_retries: Optional[int] = None,
+    initial_delay: Optional[int] = None,
+    max_delay: Optional[int] = None
+) -> Any:
     """
     Retry a function with exponential backoff for transient failures.
 
@@ -145,7 +155,15 @@ def retry_with_exponential_backoff(func, max_retries=3, initial_delay=1, max_del
     Raises:
         The last exception if all retries fail
     """
-    last_exception = None
+    # Use config defaults if not specified
+    if max_retries is None:
+        max_retries = config.RETRY_MAX_ATTEMPTS
+    if initial_delay is None:
+        initial_delay = config.RETRY_INITIAL_DELAY
+    if max_delay is None:
+        max_delay = config.RETRY_MAX_DELAY
+
+    last_exception: Optional[Exception] = None
 
     for attempt in range(max_retries):
         try:
@@ -174,21 +192,24 @@ def retry_with_exponential_backoff(func, max_retries=3, initial_delay=1, max_del
 # Debug Commands - For testing error handling from chat interface
 # ============================================================================
 
-def is_debug_command(message):
+def is_debug_command(message: str) -> bool:
     """Check if message is a debug command"""
     return message.strip() in DEBUG_COMMANDS
 
-def handle_debug_command(message):
+def handle_debug_command(message: str) -> Optional[str]:
     """
     Execute debug command by raising appropriate error.
 
     Args:
         message: The debug command string
 
+    Returns:
+        Help message string if command is /debug-help, None otherwise
+
     Raises:
         Appropriate exception based on command
     """
-    command = message.strip()
+    command: str = message.strip()
 
     logger.info(f"Executing debug command: {command}")
 

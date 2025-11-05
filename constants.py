@@ -10,7 +10,7 @@ This module contains application-wide constants including:
 # System Prompt for LLM - Explains MUI tags and interactive components
 # ============================================================================
 
-SYSTEM_PROMPT = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
+SYSTEM_PROMPT: str = """CRITICAL: You MUST use <mui> tags for ALL multiple choice questions. Every question needs clickable buttons.
 
 IMPORTANT - ONE QUESTION AT A TIME: When asking questions with interactive components (buttons, checkboxes, sliders, rating, toggle, date picker), only ask ONE question at a time. Wait for the user's response before asking the next question. If the user requests multiple questions or says "then ask...", acknowledge that you will ask them one at a time, and only present the FIRST question now.
 
@@ -146,7 +146,7 @@ RULES:
 # Debug Commands - For testing error handling from chat interface
 # ============================================================================
 
-DEBUG_COMMANDS = {
+DEBUG_COMMANDS: dict[str, str] = {
     '/test-rate-limit': 'Simulate rate limit error (429)',
     '/test-auth-error': 'Simulate authentication error (401)',
     '/test-network-error': 'Simulate network timeout',

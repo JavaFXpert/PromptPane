@@ -11,6 +11,7 @@ This module contains all MonsterUI component generation logic:
 from fasthtml.common import *
 from monsterui.all import *
 from html.parser import HTMLParser
+from typing import Any
 import re
 import time
 
@@ -57,7 +58,7 @@ class MUITagParser(HTMLParser):
             if self.current_tag['options']:
                 self.current_tag['options'][-1]['label'] += data.strip()
 
-def parse_mui_tags(content):
+def parse_mui_tags(content: str) -> tuple[list[dict[str, Any]], str]:
     """Extract MUI tags from content and return tags and cleaned content"""
     parser = MUITagParser()
     parser.feed(content)
@@ -67,7 +68,7 @@ def parse_mui_tags(content):
 # Optimistic UI JavaScript Helpers - DRY principle for interactive components
 # ============================================================================
 
-def get_optimistic_ui_onclick(value_source='this.dataset.value'):
+def get_optimistic_ui_onclick(value_source: str = 'this.dataset.value') -> str:
     """
     Generate onclick JavaScript for optimistic UI pattern.
 
@@ -121,7 +122,7 @@ def get_optimistic_ui_onclick(value_source='this.dataset.value'):
         }}, 100);
     """
 
-def get_optimistic_ui_after_swap():
+def get_optimistic_ui_after_swap() -> str:
     """
     Generate hx_on__after_swap JavaScript for cleanup after HTMX swap.
 
@@ -592,11 +593,11 @@ def generate_mui_component(tag_info, session_id):
 # MUI Tag Processing
 # ============================================================================
 
-def process_mui_tags(content, session_id):
+def process_mui_tags(content: str, session_id: str) -> tuple[list[Any], str]:
     """Process MUI tags in content and return components + cleaned markdown"""
     # Find all MUI tags with regex to get positions
-    mui_pattern = r'<mui[^>]*>.*?</mui>'
-    matches = list(re.finditer(mui_pattern, content, re.DOTALL))
+    mui_pattern: str = r'<mui[^>]*>.*?</mui>'
+    matches: list[re.Match[str]] = list(re.finditer(mui_pattern, content, re.DOTALL))
 
     if not matches:
         return [], content
@@ -605,8 +606,8 @@ def process_mui_tags(content, session_id):
     mui_tags, _ = parse_mui_tags(content)
 
     # Build components and create placeholders (use HTML comments that markdown preserves)
-    components = []
-    result_content = content
+    components: list[Any] = []
+    result_content: str = content
 
     for i, (match, tag_info) in enumerate(zip(reversed(matches), reversed(mui_tags))):
         component = generate_mui_component(tag_info, session_id)

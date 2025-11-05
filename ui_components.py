@@ -9,6 +9,8 @@ This module contains UI rendering functions including:
 
 from fasthtml.common import *
 from monsterui.all import *
+from datetime import datetime
+from typing import Optional, Callable, Any
 
 # Import MUI components and processing
 from mui_components import process_mui_tags
@@ -23,7 +25,7 @@ from utils import (
 # UI Component Rendering Functions
 # ============================================================================
 
-def EmptyState():
+def EmptyState() -> Any:
     """Render the empty state message shown when there are no messages"""
     return Div(
         Div(
@@ -39,9 +41,9 @@ def EmptyState():
         cls="flex items-center justify-center h-full"
     )
 
-def ChatMessage(role, content, timestamp=None, session_id="default"):
+def ChatMessage(role: str, content: str, timestamp: Optional[datetime] = None, session_id: str = "default") -> Any:
     """Render a chat message bubble"""
-    is_user = role == "user"
+    is_user: bool = role == "user"
 
     avatar = DiceBearAvatar(
         "User" if is_user else "Assistant",
@@ -104,7 +106,7 @@ def ChatMessage(role, content, timestamp=None, session_id="default"):
 
     return Div(message_content, cls="mb-4")
 
-def ChatInterface(session_id, conversation, get_conversation_func):
+def ChatInterface(session_id: str, conversation: list[dict[str, Any]], get_conversation_func: Callable[[str], list[dict[str, Any]]]) -> Any:
     """
     Main chat interface.
 

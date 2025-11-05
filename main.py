@@ -6,6 +6,10 @@ import os
 from groq import Groq
 from datetime import datetime
 from dotenv import load_dotenv
+from typing import Any
+
+# Import application configuration
+import config
 
 # Import application constants
 from constants import SYSTEM_PROMPT, DEBUG_COMMANDS
@@ -37,61 +41,51 @@ from ui_components import (
     ChatInterface
 )
 
-# Load environment variables from .env file
-load_dotenv()
-
 # Initialize Groq client
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=config.GROQ_API_KEY)
 
 # KaTeX scripts for LaTeX support
-katex_css = Link(rel="stylesheet",
-                 href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css",
-                 integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV",
-                 crossorigin="anonymous")
+katex_css = Link(
+    rel="stylesheet",
+    href=config.KATEX_CSS_URL,
+    integrity=config.KATEX_CSS_INTEGRITY,
+    crossorigin="anonymous"
+)
 
-katex_js = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js",
-                  integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8",
-                  crossorigin="anonymous")
+katex_js = Script(
+    src=config.KATEX_JS_URL,
+    integrity=config.KATEX_JS_INTEGRITY,
+    crossorigin="anonymous"
+)
 
-katex_autorender = Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js",
-                          integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05",
-                          crossorigin="anonymous")
+katex_autorender = Script(
+    src=config.KATEX_AUTORENDER_URL,
+    integrity=config.KATEX_AUTORENDER_INTEGRITY,
+    crossorigin="anonymous"
+)
 
 # Custom CSS for citation links
-citation_style = Style("""
-    .citation-link {
-        color: #3b82f6;
-        text-decoration: none;
-        font-size: 0.85em;
-        font-weight: 500;
-        padding: 0 2px;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-    .citation-link:hover {
-        color: #1d4ed8;
-        text-decoration: underline;
-    }
-""")
+citation_style = Style(config.CITATION_CSS)
 
 # Create FastHTML app with MonsterUI theme
+theme = getattr(Theme, config.THEME_COLOR)
 app, rt = fast_app(
-    hdrs=Theme.blue.headers(highlightjs=True) + [katex_css, katex_js, katex_autorender, citation_style],
-    live=True
+    hdrs=theme.headers(highlightjs=config.ENABLE_SYNTAX_HIGHLIGHTING) + [katex_css, katex_js, katex_autorender, citation_style],
+    live=config.ENABLE_LIVE_RELOAD
 )
 
 # In-memory conversation history (in production, use database)
-conversations = {}
+conversations: dict[str, list[dict[str, Any]]] = {}
 
-def get_conversation(session_id):
+def get_conversation(session_id: str) -> list[dict[str, Any]]:
     """Get or create conversation history for a session"""
     if session_id not in conversations:
         conversations[session_id] = []
     return conversations[session_id]
 
-def add_message(session_id, role, content):
+def add_message(session_id: str, role: str, content: str) -> list[dict[str, Any]]:
     """Add a message to conversation history"""
-    conversation = get_conversation(session_id)
+    conversation: list[dict[str, Any]] = get_conversation(session_id)
     conversation.append({
         "role": role,
         "content": content,
@@ -106,7 +100,7 @@ def add_message(session_id, role, content):
 @rt("/")
 def get():
     """Main page"""
-    session_id = "default"
+    session_id = config.DEFAULT_SESSION_ID
     conversation = get_conversation(session_id)
     return Title("PromptPane"), ChatInterface(session_id, conversation, get_conversation)
 
@@ -153,18 +147,18 @@ async def post(session_id: str, message: str):
             logger.info(f"Making API call for session {session_id}")
             return client.chat.completions.create(
                 messages=messages_for_api,
-                model="openai/gpt-oss-120b",
-                temperature=0.7,
+                model=config.GROQ_MODEL,
+                temperature=config.GROQ_TEMPERATURE,
                 # max_tokens=1024,  # Commented out to allow longer responses
-                tools=[{"type":"browser_search"},{"type":"code_interpreter"}]
+                tools=config.GROQ_TOOLS
             )
 
         # Call Groq API with retry logic for transient failures
         chat_completion = retry_with_exponential_backoff(
             make_api_call,
-            max_retries=3,
-            initial_delay=1,
-            max_delay=10
+            max_retries=config.RETRY_MAX_ATTEMPTS,
+            initial_delay=config.RETRY_INITIAL_DELAY,
+            max_delay=config.RETRY_MAX_DELAY
         )
 
         logger.info(f"API call successful for session {session_id}")
@@ -253,18 +247,18 @@ async def post(session_id: str, message: str):
             logger.info(f"Making API call for session {session_id} (button)")
             return client.chat.completions.create(
                 messages=messages_for_api,
-                model="openai/gpt-oss-120b",
-                temperature=0.7,
+                model=config.GROQ_MODEL,
+                temperature=config.GROQ_TEMPERATURE,
                 # max_tokens=1024,  # Commented out to allow longer responses
-                tools=[{"type":"browser_search"},{"type":"code_interpreter"}]
+                tools=config.GROQ_TOOLS
             )
 
         # Call Groq API with retry logic for transient failures
         chat_completion = retry_with_exponential_backoff(
             make_api_call,
-            max_retries=3,
-            initial_delay=1,
-            max_delay=10
+            max_retries=config.RETRY_MAX_ATTEMPTS,
+            initial_delay=config.RETRY_INITIAL_DELAY,
+            max_delay=config.RETRY_MAX_DELAY
         )
 
         logger.info(f"API call successful for session {session_id} (button)")
@@ -304,4 +298,4 @@ async def post(session_id: str, message: str):
     )
 
 if __name__ == "__main__":
-    serve(port=5001)
+    serve(port=config.SERVER_PORT)

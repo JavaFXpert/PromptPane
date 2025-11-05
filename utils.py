@@ -7,13 +7,14 @@ This module contains utility functions for:
 """
 
 import re
+from typing import Any
 from urllib.parse import urlparse
 
 # ============================================================================
 # Citation Handling
 # ============================================================================
 
-def extract_citation_urls(chat_completion):
+def extract_citation_urls(chat_completion: Any) -> dict[int, dict[str, str]]:
     """
     Extract URLs from browser_search tool results.
 
@@ -23,7 +24,7 @@ def extract_citation_urls(chat_completion):
     Returns:
         Dictionary mapping citation indices to URL and title information
     """
-    citation_urls = {}
+    citation_urls: dict[int, dict[str, str]] = {}
 
     try:
         message = chat_completion.choices[0].message
@@ -41,7 +42,7 @@ def extract_citation_urls(chat_completion):
 
     return citation_urls
 
-def make_citations_clickable(content, citation_urls):
+def make_citations_clickable(content: str, citation_urls: dict[int, dict[str, str]]) -> str:
     """
     Replace citation markers with clickable links.
 
@@ -88,7 +89,7 @@ def make_citations_clickable(content, citation_urls):
 # LaTeX Content Processing
 # ============================================================================
 
-def extract_latex(content):
+def extract_latex(content: str) -> tuple[str, list[tuple[str, str]]]:
     """
     Extract LaTeX blocks and replace with placeholders.
 
@@ -103,7 +104,7 @@ def extract_latex(content):
         - processed_content: Content with LaTeX replaced by placeholders
         - latex_blocks: List of tuples (math_type, latex_content)
     """
-    latex_blocks = []
+    latex_blocks: list[tuple[str, str]] = []
 
     # Extract \[...\] display math (with possible \begin{aligned})
     def save_bracket_display(match):
@@ -135,7 +136,7 @@ def extract_latex(content):
 
     return content, latex_blocks
 
-def restore_latex(content, latex_blocks):
+def restore_latex(content: str, latex_blocks: list[tuple[str, str]]) -> str:
     """
     Restore LaTeX blocks from placeholders.
 
