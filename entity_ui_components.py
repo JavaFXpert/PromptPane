@@ -1,0 +1,377 @@
+"""
+Entity UI Components
+
+UI components for entity management sidebar and related functionality.
+Displays the global knowledge graph with grouping, editing, and deletion.
+"""
+
+from fasthtml.common import *
+from monsterui.all import *
+from datetime import datetime
+from typing import Any
+
+# Entity type to display label mapping
+ENTITY_TYPE_LABELS = {
+    "person": "👥 People",
+    "date": "📅 Important Dates",
+    "fact": "💡 Facts",
+    "preference": "⭐ Preferences",
+    "location": "📍 Locations",
+    "relationship": "🔗 Relationships"
+}
+
+# Entity type to emoji mapping (for individual items)
+ENTITY_TYPE_ICONS = {
+    "person": "👤",
+    "date": "📅",
+    "fact": "💡",
+    "preference": "⭐",
+    "location": "📍",
+    "relationship": "🔗"
+}
+
+
+def EntityListItem(entity: dict, show_actions: bool = True) -> Any:
+    """
+    Render a single entity item.
+
+    Args:
+        entity: Entity dictionary with id, name, value, type, etc.
+        show_actions: Whether to show edit/delete buttons
+
+    Returns:
+        Entity list item component
+    """
+    entity_id = entity["id"]
+    entity_type = entity["entity_type"]
+    name = entity["name"]
+    value = entity["value"]
+    description = entity.get("description", "")
+    confidence = entity.get("confidence", 1.0)
+    mention_count = entity.get("mention_count", 1)
+
+    # Get icon for entity type
+    icon = ENTITY_TYPE_ICONS.get(entity_type, "•")
+
+    # Build display text
+    if description:
+        detail_text = f"{value} • {description}"
+    else:
+        detail_text = value
+
+    return Div(
+        # Left side: icon and entity info
+        Div(
+            # Icon
+            Span(icon, cls="text-xl mr-2"),
+
+            # Entity info
+            Div(
+                # Entity name
+                Div(
+                    name,
+                    cls="font-medium text-sm",
+                    id=f"entity-name-{entity_id}"
+                ),
+
+                # Value and description
+                Div(
+                    detail_text,
+                    cls="text-xs text-muted-foreground"
+                ),
+
+                # Metadata
+                Div(
+                    f"Mentioned {mention_count}× • {int(confidence * 100)}% confidence",
+                    cls="text-xs text-muted-foreground opacity-70"
+                ),
+
+                cls="flex-1 min-w-0"
+            ),
+
+            cls="flex items-start flex-1 min-w-0"
+        ),
+
+        # Right side: actions (show on hover)
+        Div(
+            # Edit button
+            Button(
+                "✏️",
+                cls="btn btn-ghost btn-xs",
+                hx_get=f"/entity/{entity_id}/edit-form",
+                hx_target=f"#entity-{entity_id}",
+                hx_swap="outerHTML",
+                title="Edit entity"
+            ) if show_actions else None,
+
+            # Delete button
+            Button(
+                "🗑️",
+                cls="btn btn-ghost btn-xs",
+                hx_delete=f"/entity/{entity_id}/delete",
+                hx_confirm=f"Delete '{name}'? This cannot be undone.",
+                hx_target=f"#entity-{entity_id}",
+                hx_swap="outerHTML swap:0.3s",
+                title="Delete entity"
+            ) if show_actions else None,
+
+            cls="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+        ) if show_actions else None,
+
+        id=f"entity-{entity_id}",
+        cls="flex items-start justify-between p-2 rounded hover:bg-base-200 transition-all group"
+    )
+
+
+def EntityEditForm(entity: dict) -> Any:
+    """
+    Inline form for editing an entity.
+
+    Args:
+        entity: Entity dictionary to edit
+
+    Returns:
+        Edit form component
+    """
+    entity_id = entity["id"]
+
+    return Form(
+        Div(
+            # Name field
+            Div(
+                Label("Name", cls="label label-text text-xs"),
+                Input(
+                    type="text",
+                    name="name",
+                    value=entity["name"],
+                    cls="input input-bordered input-xs w-full",
+                    required=True
+                ),
+                cls="form-control mb-2"
+            ),
+
+            # Value field
+            Div(
+                Label("Value", cls="label label-text text-xs"),
+                Input(
+                    type="text",
+                    name="value",
+                    value=entity["value"],
+                    cls="input input-bordered input-xs w-full",
+                    required=True
+                ),
+                cls="form-control mb-2"
+            ),
+
+            # Description field
+            Div(
+                Label("Description (optional)", cls="label label-text text-xs"),
+                Input(
+                    type="text",
+                    name="description",
+                    value=entity.get("description", ""),
+                    cls="input input-bordered input-xs w-full"
+                ),
+                cls="form-control mb-2"
+            ),
+
+            # Confidence field
+            Div(
+                Label(f"Confidence: {int(entity.get('confidence', 1.0) * 100)}%", cls="label label-text text-xs"),
+                Input(
+                    type="range",
+                    name="confidence",
+                    value=str(entity.get("confidence", 1.0)),
+                    min="0",
+                    max="1",
+                    step="0.1",
+                    cls="range range-xs",
+                    oninput="this.previousElementSibling.textContent = `Confidence: ${Math.round(this.value * 100)}%`"
+                ),
+                cls="form-control mb-3"
+            ),
+
+            # Buttons
+            Div(
+                Button("✓", type="submit", cls="btn btn-success btn-xs"),
+                Button(
+                    "✕",
+                    type="button",
+                    cls="btn btn-ghost btn-xs",
+                    hx_get=f"/entity/{entity_id}/cancel-edit",
+                    hx_target=f"#entity-{entity_id}",
+                    hx_swap="outerHTML"
+                ),
+                cls="flex gap-1"
+            ),
+
+            cls="space-y-2"
+        ),
+
+        hx_put=f"/entity/{entity_id}/update",
+        hx_target=f"#entity-{entity_id}",
+        hx_swap="outerHTML",
+        cls="p-2 bg-base-200 rounded",
+        id=f"entity-{entity_id}"
+    )
+
+
+def EntityTypeGroup(entity_type: str, entities: list[dict]) -> Any:
+    """
+    Render a group of entities of the same type.
+
+    Args:
+        entity_type: The entity type (person, date, fact, etc.)
+        entities: List of entities of this type
+
+    Returns:
+        Entity type group component
+    """
+    label = ENTITY_TYPE_LABELS.get(entity_type, entity_type.capitalize())
+
+    return Div(
+        # Group header
+        Div(
+            H4(label, cls="font-semibold text-sm"),
+            Span(
+                f"{len(entities)}",
+                cls="badge badge-sm badge-primary"
+            ),
+            cls="flex items-center justify-between mb-2"
+        ),
+
+        # Entity list
+        Div(
+            *[EntityListItem(entity) for entity in entities],
+            cls="space-y-1"
+        ),
+
+        cls="mb-4"
+    )
+
+
+def EntitySidebar(entities: list[dict], search_query: str = "") -> Any:
+    """
+    Render the entity management sidebar.
+
+    Args:
+        entities: List of all entities
+        search_query: Current search query (if any)
+
+    Returns:
+        Entity sidebar component
+    """
+    # Filter entities by search query
+    if search_query:
+        search_lower = search_query.lower()
+        entities = [
+            e for e in entities
+            if search_lower in e["name"].lower()
+            or search_lower in e["value"].lower()
+            or search_lower in e.get("description", "").lower()
+        ]
+
+    # Group entities by type
+    by_type = {}
+    for entity in entities:
+        entity_type = entity["entity_type"]
+        if entity_type not in by_type:
+            by_type[entity_type] = []
+        by_type[entity_type].append(entity)
+
+    # Sort each type by mention count and name
+    for entity_type in by_type:
+        by_type[entity_type].sort(
+            key=lambda e: (-e.get("mention_count", 0), e["name"])
+        )
+
+    # Build type groups in order
+    type_order = ["person", "date", "preference", "fact", "location", "relationship"]
+    type_groups = []
+    for entity_type in type_order:
+        if entity_type in by_type:
+            type_groups.append(EntityTypeGroup(entity_type, by_type[entity_type]))
+
+    # Add any other types not in the standard order
+    for entity_type in by_type:
+        if entity_type not in type_order:
+            type_groups.append(EntityTypeGroup(entity_type, by_type[entity_type]))
+
+    return Div(
+        # Header
+        Div(
+            H2("🧠 Knowledge Graph", cls="text-lg font-bold"),
+            Div(
+                Span(
+                    f"{len(entities)} entities",
+                    cls="text-xs text-muted-foreground"
+                ),
+                cls="flex items-center gap-2"
+            ),
+            cls="flex items-center justify-between mb-3 p-3 border-b border-base-300"
+        ),
+
+        # Search box
+        Form(
+            Input(
+                type="text",
+                name="q",
+                placeholder="Search entities...",
+                value=search_query,
+                cls="input input-bordered input-sm w-full",
+                hx_get="/entities/search",
+                hx_target="#entity-content",
+                hx_swap="innerHTML",
+                hx_trigger="keyup changed delay:300ms"
+            ),
+            cls="px-3 mb-3"
+        ),
+
+        # Entity list
+        Div(
+            *type_groups if type_groups else [
+                Div(
+                    Div(
+                        "🔍",
+                        cls="text-4xl mb-2"
+                    ),
+                    P(
+                        "No entities found" if search_query else "No entities yet",
+                        cls="text-sm text-muted-foreground"
+                    ),
+                    cls="flex flex-col items-center justify-center p-8 text-center"
+                )
+            ],
+            id="entity-content",
+            cls="px-3 overflow-y-auto",
+            style="max-height: calc(100vh - 180px);"
+        ),
+
+        cls="w-80 bg-base-100 border-l border-base-300 flex flex-col",
+        id="entity-sidebar"
+    )
+
+
+def EmptyEntityState() -> Any:
+    """
+    Render empty state when no entities exist.
+
+    Returns:
+        Empty state component
+    """
+    return Div(
+        Div(
+            "🧠",
+            cls="text-6xl mb-4"
+        ),
+        H3("No Knowledge Yet", cls="text-lg font-semibold mb-2"),
+        P(
+            "Start chatting to build your knowledge graph!",
+            cls="text-sm text-muted-foreground mb-4"
+        ),
+        P(
+            "The AI will automatically extract and remember facts, people, dates, and preferences from your conversations.",
+            cls="text-xs text-muted-foreground max-w-xs text-center"
+        ),
+        cls="flex flex-col items-center justify-center p-8 text-center h-full"
+    )

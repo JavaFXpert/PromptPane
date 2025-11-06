@@ -788,28 +788,32 @@ def update_session_icon(session_id: str, new_icon: str) -> bool:
     return True
 
 
-def update_session_access(session_id: str) -> None:
+def update_session_access(session_id: str) -> bool:
     """
     Update last_accessed timestamp for a session.
-    Creates session metadata if it doesn't exist.
+
+    NOTE: This will NOT create session metadata if it doesn't exist.
+    Use ensure_session_metadata_exists() or create_session() to create sessions.
 
     Args:
         session_id: The session identifier
+
+    Returns:
+        True if updated, False if session doesn't exist
     """
     timestamp = datetime.now(timezone.utc).isoformat()
 
     # Check if session metadata exists
-    existing = get_session(session_id)
+    if not get_session(session_id):
+        return False
 
-    if existing:
-        # Update last_accessed
-        db.execute(
-            "UPDATE session_metadata SET last_accessed = ? WHERE session_id = ?",
-            [timestamp, session_id]
-        )
-    else:
-        # Create new session metadata with default name
-        create_session(session_id, f"Session {session_id[:8]}", "💬")
+    # Update last_accessed
+    db.execute(
+        "UPDATE session_metadata SET last_accessed = ? WHERE session_id = ?",
+        [timestamp, session_id]
+    )
+
+    return True
 
 
 def update_session_message_count(session_id: str) -> None:

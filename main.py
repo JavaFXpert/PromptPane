@@ -20,6 +20,14 @@ from entity_extraction import (
     should_extract_entities
 )
 
+# Import knowledge graph manager
+from knowledge_graph_manager import (
+    update_knowledge_graph_with_llm,
+    build_context_from_kg,
+    load_knowledge_graph,
+    save_knowledge_graph
+)
+
 # Import application constants
 from constants import SYSTEM_PROMPT, DEBUG_COMMANDS
 
@@ -56,6 +64,14 @@ from session_ui_components import (
     SessionListItem,
     NewSessionModal,
     SessionRenameInlineForm
+)
+
+# Import entity UI components
+from entity_ui_components import (
+    EntitySidebar,
+    EntityListItem,
+    EntityEditForm,
+    EmptyEntityState
 )
 
 # Import validators
@@ -122,10 +138,15 @@ def get():
     # Get all sessions for sidebar
     sessions = db.get_all_session_metadata()
 
-    # Return full page with sidebar
+    # Get all entities from JSON knowledge graph for entity sidebar
+    kg = load_knowledge_graph()
+    entities = kg.get("entities", [])
+
+    # Return full page with session sidebar (left), chat (center), entity sidebar (right)
     return Title("PromptPane"), Div(
         SessionSidebar(sessions, session_id),
         ChatInterface(session_id, conversation, db.get_conversation),
+        EntitySidebar(entities),
         cls="flex h-screen"
     )
 
@@ -179,6 +200,17 @@ async def post(session_id: str, message: str):
             session_id
         )
 
+    # Check if session exists - don't allow messaging deleted sessions
+    if not db.get_session(session_id):
+        # Session was deleted or doesn't exist
+        error_msg = "❌ **Session Not Found**\n\nThis session has been deleted. Redirecting to default session..."
+        logger.warning(f"Attempted to message deleted session: {session_id}")
+        # Return error and use HX-Redirect to send user to default session
+        return Response(
+            str(ChatMessage("assistant", error_msg, datetime.now(), config.DEFAULT_SESSION_ID)),
+            headers={"HX-Redirect": "/"}
+        )
+
     # Add user message
     db.add_message(session_id, "user", message)
 
@@ -207,8 +239,9 @@ async def post(session_id: str, message: str):
     # Build system prompt with knowledge graph context
     system_prompt = SYSTEM_PROMPT
     if config.ENABLE_ENTITY_EXTRACTION:
-        kg_context = db.build_context_from_entities(
-            session_id,
+        # Use JSON-based knowledge graph for context
+        kg_context = build_context_from_kg(
+            kg=None,  # Will load from file
             max_entities=config.ENTITY_CONTEXT_MAX_ENTITIES,
             min_confidence=config.ENTITY_CONTEXT_MIN_CONFIDENCE
         )
@@ -257,33 +290,33 @@ async def post(session_id: str, message: str):
         # Add assistant response
         db.add_message(session_id, "assistant", assistant_message)
 
-        # Extract and store entities from this conversation
+        # Update knowledge graph using LLM-based curation
         if config.ENABLE_ENTITY_EXTRACTION:
             if should_extract_entities(message, assistant_message):
                 try:
-                    extracted = extract_entities_from_conversation(
-                        message,
-                        assistant_message,
-                        client,
-                        temperature=config.ENTITY_EXTRACTION_TEMPERATURE
+                    # Load current knowledge graph
+                    current_kg = load_knowledge_graph()
+
+                    # Update knowledge graph with LLM (handles deduplication semantically)
+                    updated_kg = update_knowledge_graph_with_llm(
+                        user_message=message,
+                        assistant_response=assistant_message,
+                        client=client,
+                        current_kg=current_kg
                     )
 
-                    # Store entities that meet confidence threshold
-                    for entity_data in extracted:
-                        if entity_data["confidence"] >= config.ENTITY_EXTRACTION_MIN_CONFIDENCE:
-                            db.add_entity(
-                                session_id=session_id,
-                                entity_type=entity_data["entity_type"],
-                                name=entity_data["name"],
-                                value=entity_data["value"],
-                                description=entity_data.get("description", ""),
-                                confidence=entity_data["confidence"]
-                            )
-                            logger.info(f"Stored entity: {entity_data['name']} ({entity_data['entity_type']})")
+                    if updated_kg:
+                        logger.info(f"Knowledge graph updated: {len(updated_kg.get('entities', []))} entities, {len(updated_kg.get('relationships', []))} relationships")
+
+                        # Optional: Sync updated entities back to database for UI
+                        # This keeps the database as a cache/view of the JSON source of truth
+                        # (We can implement this sync later if needed)
+                    else:
+                        logger.warning("Knowledge graph update failed validation, keeping old version")
 
                 except Exception as e:
-                    # Don't fail the request if entity extraction fails
-                    logger.error(f"Entity extraction failed: {e}", exc_info=True)
+                    # Don't fail the request if knowledge graph update fails
+                    logger.error(f"Knowledge graph update failed: {e}", exc_info=True)
 
     except Exception as e:
         # Get user-friendly error message
@@ -379,6 +412,17 @@ async def post(session_id: str, message: str):
             session_id
         )
 
+    # Check if session exists - don't allow messaging deleted sessions
+    if not db.get_session(session_id):
+        # Session was deleted or doesn't exist
+        error_msg = "❌ **Session Not Found**\n\nThis session has been deleted. Redirecting to default session..."
+        logger.warning(f"Attempted to use button in deleted session: {session_id}")
+        # Return error and use HX-Redirect to send user to default session
+        return Response(
+            str(ChatMessage("assistant", error_msg, datetime.now(), config.DEFAULT_SESSION_ID)),
+            headers={"HX-Redirect": "/"}
+        )
+
     # Add user message (button value)
     db.add_message(session_id, "user", message)
 
@@ -407,8 +451,9 @@ async def post(session_id: str, message: str):
     # Build system prompt with knowledge graph context
     system_prompt = SYSTEM_PROMPT
     if config.ENABLE_ENTITY_EXTRACTION:
-        kg_context = db.build_context_from_entities(
-            session_id,
+        # Use JSON-based knowledge graph for context
+        kg_context = build_context_from_kg(
+            kg=None,  # Will load from file
             max_entities=config.ENTITY_CONTEXT_MAX_ENTITIES,
             min_confidence=config.ENTITY_CONTEXT_MIN_CONFIDENCE
         )
@@ -457,33 +502,33 @@ async def post(session_id: str, message: str):
         # Add assistant response
         db.add_message(session_id, "assistant", assistant_message)
 
-        # Extract and store entities from this conversation
+        # Update knowledge graph using LLM-based curation
         if config.ENABLE_ENTITY_EXTRACTION:
             if should_extract_entities(message, assistant_message):
                 try:
-                    extracted = extract_entities_from_conversation(
-                        message,
-                        assistant_message,
-                        client,
-                        temperature=config.ENTITY_EXTRACTION_TEMPERATURE
+                    # Load current knowledge graph
+                    current_kg = load_knowledge_graph()
+
+                    # Update knowledge graph with LLM (handles deduplication semantically)
+                    updated_kg = update_knowledge_graph_with_llm(
+                        user_message=message,
+                        assistant_response=assistant_message,
+                        client=client,
+                        current_kg=current_kg
                     )
 
-                    # Store entities that meet confidence threshold
-                    for entity_data in extracted:
-                        if entity_data["confidence"] >= config.ENTITY_EXTRACTION_MIN_CONFIDENCE:
-                            db.add_entity(
-                                session_id=session_id,
-                                entity_type=entity_data["entity_type"],
-                                name=entity_data["name"],
-                                value=entity_data["value"],
-                                description=entity_data.get("description", ""),
-                                confidence=entity_data["confidence"]
-                            )
-                            logger.info(f"Stored entity: {entity_data['name']} ({entity_data['entity_type']})")
+                    if updated_kg:
+                        logger.info(f"Knowledge graph updated: {len(updated_kg.get('entities', []))} entities, {len(updated_kg.get('relationships', []))} relationships")
+
+                        # Optional: Sync updated entities back to database for UI
+                        # This keeps the database as a cache/view of the JSON source of truth
+                        # (We can implement this sync later if needed)
+                    else:
+                        logger.warning("Knowledge graph update failed validation, keeping old version")
 
                 except Exception as e:
-                    # Don't fail the request if entity extraction fails
-                    logger.error(f"Entity extraction failed: {e}", exc_info=True)
+                    # Don't fail the request if knowledge graph update fails
+                    logger.error(f"Knowledge graph update failed: {e}", exc_info=True)
 
     except Exception as e:
         # Get user-friendly error message
@@ -539,8 +584,11 @@ def get(session_id: str):
         # Redirect to default session if invalid
         return RedirectResponse("/", status_code=303)
 
-    # Ensure session metadata exists
-    db.ensure_session_metadata_exists(session_id, f"Session {session_id[:8]}")
+    # Check if session exists - if not, redirect to default
+    # (Don't auto-create deleted sessions)
+    if not db.get_session(session_id):
+        logger.info(f"Session {session_id} does not exist, redirecting to default")
+        return RedirectResponse("/", status_code=303)
 
     # Update last accessed time
     db.update_session_access(session_id)
@@ -551,10 +599,15 @@ def get(session_id: str):
     # Get all sessions for sidebar
     sessions = db.get_all_session_metadata()
 
-    # Return full page with sidebar
+    # Get all entities from JSON knowledge graph for entity sidebar
+    kg = load_knowledge_graph()
+    entities = kg.get("entities", [])
+
+    # Return full page with session sidebar (left), chat (center), entity sidebar (right)
     return Title("PromptPane"), Div(
         SessionSidebar(sessions, session_id),
         ChatInterface(session_id, conversation, db.get_conversation),
+        EntitySidebar(entities),
         cls="flex h-screen"
     )
 
@@ -562,10 +615,14 @@ def get(session_id: str):
 @rt("/session/{session_id}/delete")
 def delete(session_id: str):
     """Delete a session and all its data"""
+    logger.info(f"DELETE route called for session: {session_id}")
+
     # Validate session ID
     try:
         session_id = validate_session_id(session_id)
-    except SessionIDValidationError:
+        logger.info(f"Session ID validated: {session_id}")
+    except SessionIDValidationError as e:
+        logger.error(f"Session ID validation failed: {e}")
         return Div()  # Return empty if invalid
 
     # Don't allow deleting default session
@@ -574,10 +631,17 @@ def delete(session_id: str):
         return Div()
 
     # Delete session
-    db.delete_session(session_id)
+    logger.info(f"About to delete session from database: {session_id}")
+    deleted_count = db.delete_session(session_id)
+    logger.info(f"Deleted session: {session_id}, records deleted: {deleted_count}")
 
-    # Return empty div (will remove the session item from UI)
-    return Div()
+    # Use HTMX redirect header to redirect to default session
+    # This tells HTMX to do a full page redirect instead of swapping content
+    logger.info(f"Returning HX-Redirect to /")
+    return Response(
+        "",
+        headers={"HX-Redirect": "/"}
+    )
 
 
 @rt("/session/{session_id}/rename-form")
@@ -658,6 +722,179 @@ def post(session_id: str, name: str, icon: str = "💬"):
 
     # Redirect to the session
     return RedirectResponse(f"/session/{session_id}/switch", status_code=303)
+
+
+# ============================================================================
+# Entity Management Routes
+# ============================================================================
+
+@rt("/entities/search")
+def get(q: str = ""):
+    """Search and filter entities"""
+    # Get all entities from JSON knowledge graph
+    kg = load_knowledge_graph()
+    entities = kg.get("entities", [])
+
+    # Filter by search query if provided
+    if q:
+        q_lower = q.lower()
+        entities = [
+            e for e in entities
+            if q_lower in e["name"].lower()
+            or q_lower in e["value"].lower()
+            or q_lower in e.get("description", "").lower()
+        ]
+
+    # Group entities by type
+    by_type = {}
+    for entity in entities:
+        entity_type = entity["entity_type"]
+        if entity_type not in by_type:
+            by_type[entity_type] = []
+        by_type[entity_type].append(entity)
+
+    # Sort each type by mention count and name
+    for entity_type in by_type:
+        by_type[entity_type].sort(
+            key=lambda e: (-e.get("mention_count", 0), e["name"])
+        )
+
+    # Build type groups in order
+    from entity_ui_components import EntityTypeGroup, ENTITY_TYPE_LABELS
+    type_order = ["person", "date", "preference", "fact", "location", "relationship"]
+    type_groups = []
+    for entity_type in type_order:
+        if entity_type in by_type:
+            type_groups.append(EntityTypeGroup(entity_type, by_type[entity_type]))
+
+    # Add any other types not in the standard order
+    for entity_type in by_type:
+        if entity_type not in type_order:
+            type_groups.append(EntityTypeGroup(entity_type, by_type[entity_type]))
+
+    # Return the entity content
+    if type_groups:
+        return type_groups
+    else:
+        return Div(
+            Div("🔍", cls="text-4xl mb-2"),
+            P(
+                "No entities found" if q else "No entities yet",
+                cls="text-sm text-muted-foreground"
+            ),
+            cls="flex flex-col items-center justify-center p-8 text-center"
+        )
+
+
+@rt("/entity/{entity_id}/edit-form")
+def get(entity_id: int):
+    """Get edit form for an entity"""
+    # Load knowledge graph from JSON
+    kg = load_knowledge_graph()
+
+    # Find the entity by ID
+    entity = None
+    for e in kg.get("entities", []):
+        if e["id"] == entity_id:
+            entity = e
+            break
+
+    if not entity:
+        return Div()
+
+    return EntityEditForm(entity)
+
+
+@rt("/entity/{entity_id}/cancel-edit")
+def get(entity_id: int):
+    """Cancel edit and restore original entity display"""
+    # Load knowledge graph from JSON
+    kg = load_knowledge_graph()
+
+    # Find the entity by ID
+    entity = None
+    for e in kg.get("entities", []):
+        if e["id"] == entity_id:
+            entity = e
+            break
+
+    if not entity:
+        return Div()
+
+    return EntityListItem(entity)
+
+
+@rt("/entity/{entity_id}/update")
+def put(entity_id: int, name: str, value: str, description: str = "", confidence: float = 1.0):
+    """Update an entity in the knowledge graph JSON"""
+    # Validate inputs
+    if not name or not value:
+        return Div()
+
+    # Load knowledge graph from JSON
+    kg = load_knowledge_graph()
+
+    # Find and update the entity
+    entity = None
+    for e in kg.get("entities", []):
+        if e["id"] == entity_id:
+            entity = e
+            # Update fields
+            e["name"] = name
+            e["value"] = value
+            e["description"] = description
+            e["confidence"] = float(confidence)
+            break
+
+    if not entity:
+        return Div()
+
+    # Save updated knowledge graph
+    if not save_knowledge_graph(kg):
+        logger.error(f"Failed to save knowledge graph after updating entity {entity_id}")
+        return Div()
+
+    logger.info(f"Updated entity {entity_id}: {name}")
+
+    # Return updated entity list item
+    return EntityListItem(entity)
+
+
+@rt("/entity/{entity_id}/delete")
+def delete(entity_id: int):
+    """Delete an entity from the knowledge graph JSON"""
+    # Load knowledge graph from JSON
+    kg = load_knowledge_graph()
+
+    # Find and remove the entity
+    entities = kg.get("entities", [])
+    entity_found = False
+    for i, e in enumerate(entities):
+        if e["id"] == entity_id:
+            entity_name = e["name"]
+            entities.pop(i)
+            entity_found = True
+            break
+
+    if not entity_found:
+        return Div()
+
+    # Remove any relationships that reference this entity
+    relationships = kg.get("relationships", [])
+    kg["relationships"] = [
+        rel for rel in relationships
+        if rel["entity1_id"] != entity_id and rel["entity2_id"] != entity_id
+    ]
+
+    # Save updated knowledge graph
+    if not save_knowledge_graph(kg):
+        logger.error(f"Failed to save knowledge graph after deleting entity {entity_id}")
+        return Div()
+
+    logger.info(f"Deleted entity {entity_id}: {entity_name}")
+
+    # Return empty div (HTMX will remove the item)
+    return Div()
 
 
 if __name__ == "__main__":

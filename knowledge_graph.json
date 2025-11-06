@@ -1,0 +1,524 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-11-06T21:13:34.409292+00:00",
+  "entities": [
+    {
+      "id": 1,
+      "entity_type": "person",
+      "name": "James Weaver",
+      "value": "self",
+      "description": "User's full name, goes by Jim",
+      "confidence": 0.99,
+      "created_at": "2025-11-06T03:54:52.268524+00:00",
+      "last_mentioned": "2025-11-07T02:00:00Z",
+      "mention_count": 11
+    },
+    {
+      "id": 3,
+      "entity_type": "person",
+      "name": "Julie Weaver",
+      "value": "wife",
+      "description": "",
+      "confidence": 0.99,
+      "created_at": "2025-11-06T03:56:36.112725+00:00",
+      "last_mentioned": "2025-11-06T03:56:36.112725+00:00",
+      "mention_count": 1
+    },
+    {
+      "id": 4,
+      "entity_type": "date",
+      "name": "Julie birth date",
+      "value": "1955-10-13",
+      "description": "Wife's date of birth",
+      "confidence": 0.99,
+      "created_at": "2025-11-06T03:56:36.114443+00:00",
+      "last_mentioned": "2025-11-06T03:56:36.114443+00:00",
+      "mention_count": 1
+    },
+    {
+      "id": 5,
+      "entity_type": "date",
+      "name": "Marriage date",
+      "value": "1975-11-14",
+      "description": "Date of marriage to Julie Weaver",
+      "confidence": 0.99,
+      "created_at": "2025-11-06T03:56:36.115727+00:00",
+      "last_mentioned": "2025-11-06T03:56:36.115727+00:00",
+      "mention_count": 1
+    },
+    {
+      "id": 7,
+      "entity_type": "person",
+      "name": "Lori Hutchins",
+      "value": "daughter",
+      "description": "Lori Hutchins, one of the two daughters",
+      "confidence": 1.0,
+      "created_at": "2025-11-06T03:59:22.697504+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 14
+    },
+    {
+      "id": 8,
+      "entity_type": "person",
+      "name": "Kelli Jones",
+      "value": "daughter",
+      "description": "Entity was updated by me",
+      "confidence": 0.9,
+      "created_at": "2025-11-06T03:59:22.698269+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 13
+    },
+    {
+      "id": 9,
+      "entity_type": "person",
+      "name": "Christian Jones",
+      "value": "spouse",
+      "description": "",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 8
+    },
+    {
+      "id": 10,
+      "entity_type": "person",
+      "name": "Levi Jones",
+      "value": "son",
+      "description": "Grandson of James Weaver",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 8
+    },
+    {
+      "id": 11,
+      "entity_type": "person",
+      "name": "Oliver Jones",
+      "value": "son",
+      "description": "Grandson of James Weaver",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 7
+    },
+    {
+      "id": 12,
+      "entity_type": "person",
+      "name": "Marty Hutchins",
+      "value": "spouse",
+      "description": "",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 7
+    },
+    {
+      "id": 13,
+      "entity_type": "person",
+      "name": "Kaleb Hutchins",
+      "value": "son",
+      "description": "Grandson of James Weaver",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z",
+      "last_mentioned": "2025-11-07T02:00:00Z",
+      "mention_count": 6
+    },
+    {
+      "id": 14,
+      "entity_type": "person",
+      "name": "Jillian Hutchins",
+      "value": "daughter",
+      "description": "Granddaughter of James Weaver; daughter of Lori Hutchins",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 9
+    },
+    {
+      "id": 15,
+      "entity_type": "fact",
+      "name": "Daughters have children",
+      "value": "Both daughters have children",
+      "description": "Lori Hutchins has Kaleb and Jillian; Kelli Jones has Levi and Oliver",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T21:45:00Z",
+      "last_mentioned": "2025-11-06T21:45:00Z",
+      "mention_count": 1
+    },
+    {
+      "id": 16,
+      "entity_type": "fact",
+      "name": "Levi and Jillian first cousins",
+      "value": "Levi Jones and Jillian Hutchins are first cousins",
+      "description": "Confirmed relationship between grandchildren",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:15:00Z",
+      "last_mentioned": "2025-11-06T23:15:00Z",
+      "mention_count": 1
+    },
+    {
+      "id": 17,
+      "entity_type": "date",
+      "name": "Provided birthdate",
+      "value": "1955-04-19",
+      "description": "",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:55:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 3
+    },
+    {
+      "id": 18,
+      "entity_type": "date",
+      "name": "Kelli Jones birthdate",
+      "value": "1995-08-22",
+      "description": "Birthdate of Kelli Jones",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:58:00Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 4
+    },
+    {
+      "id": 19,
+      "entity_type": "date",
+      "name": "Lori Hutchins birthdate",
+      "value": "1979-10-03",
+      "description": "Birthdate of Lori Hutchins",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:45Z",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 2
+    },
+    {
+      "id": 20,
+      "entity_type": "date",
+      "name": "Levi Jones birthdate",
+      "value": "2019-07-05",
+      "description": "Birthdate of Levi Jones",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:55+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 2
+    },
+    {
+      "id": 21,
+      "entity_type": "date",
+      "name": "Jillian Hutchins birthdate",
+      "value": "2007-07-27",
+      "description": "",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:59+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 2
+    },
+    {
+      "id": 22,
+      "entity_type": "date",
+      "name": "Marty Hutchins birthdate",
+      "value": "1977-10-22",
+      "description": "",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:59+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 2
+    },
+    {
+      "id": 23,
+      "entity_type": "date",
+      "name": "Oliver Jones birthdate",
+      "value": "2021-09-04",
+      "description": "Birthdate of Oliver Jones",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T00:00:00+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 2
+    },
+    {
+      "id": 24,
+      "entity_type": "date",
+      "name": "Kaleb Hutchins birthdate",
+      "value": "2004-09-22",
+      "description": "Birthdate of Kaleb Hutchins",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T00:10:00+00:00",
+      "last_mentioned": "2025-11-07T02:00:00Z",
+      "mention_count": 3
+    },
+    {
+      "id": 25,
+      "entity_type": "date",
+      "name": "Christian Jones birthdate",
+      "value": "1994-12-14",
+      "description": "Birthdate of Christian Jones",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T00:15:00+00:00",
+      "last_mentioned": "2025-11-07T01:00:00Z",
+      "mention_count": 2
+    },
+    {
+      "id": 26,
+      "entity_type": "fact",
+      "name": "Oldest grandchild",
+      "value": "Kaleb Hutchins is the oldest grandchild of James Weaver",
+      "description": "User confirmed oldest grandchild",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T02:00:00Z",
+      "last_mentioned": "2025-11-07T02:00:00Z",
+      "mention_count": 1
+    }
+  ],
+  "relationships": [
+    {
+      "id": 1,
+      "entity1_id": 8,
+      "entity2_id": 9,
+      "relationship_type": "family",
+      "description": "spouse",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z"
+    },
+    {
+      "id": 2,
+      "entity1_id": 8,
+      "entity2_id": 10,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z"
+    },
+    {
+      "id": 3,
+      "entity1_id": 9,
+      "entity2_id": 10,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z"
+    },
+    {
+      "id": 4,
+      "entity1_id": 8,
+      "entity2_id": 11,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z"
+    },
+    {
+      "id": 5,
+      "entity1_id": 9,
+      "entity2_id": 11,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:00:00Z"
+    },
+    {
+      "id": 6,
+      "entity1_id": 7,
+      "entity2_id": 12,
+      "relationship_type": "family",
+      "description": "spouse",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z"
+    },
+    {
+      "id": 7,
+      "entity1_id": 7,
+      "entity2_id": 13,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z"
+    },
+    {
+      "id": 8,
+      "entity1_id": 12,
+      "entity2_id": 13,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z"
+    },
+    {
+      "id": 9,
+      "entity1_id": 7,
+      "entity2_id": 14,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z"
+    },
+    {
+      "id": 10,
+      "entity1_id": 12,
+      "entity2_id": 14,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:05:00Z"
+    },
+    {
+      "id": 11,
+      "entity1_id": 8,
+      "entity2_id": 7,
+      "relationship_type": "family",
+      "description": "sibling",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:10:00Z"
+    },
+    {
+      "id": 12,
+      "entity1_id": 10,
+      "entity2_id": 14,
+      "relationship_type": "family",
+      "description": "first cousin",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T20:10:00Z"
+    },
+    {
+      "id": 13,
+      "entity1_id": 1,
+      "entity2_id": 7,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T21:30:00Z"
+    },
+    {
+      "id": 14,
+      "entity1_id": 1,
+      "entity2_id": 8,
+      "relationship_type": "family",
+      "description": "parent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T21:30:00Z"
+    },
+    {
+      "id": 15,
+      "entity1_id": 1,
+      "entity2_id": 13,
+      "relationship_type": "family",
+      "description": "grandparent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T22:00:00Z"
+    },
+    {
+      "id": 16,
+      "entity1_id": 1,
+      "entity2_id": 10,
+      "relationship_type": "family",
+      "description": "grandparent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T22:00:00Z"
+    },
+    {
+      "id": 17,
+      "entity1_id": 1,
+      "entity2_id": 11,
+      "relationship_type": "family",
+      "description": "grandparent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T22:00:00Z"
+    },
+    {
+      "id": 18,
+      "entity1_id": 1,
+      "entity2_id": 14,
+      "relationship_type": "family",
+      "description": "grandparent",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T22:30:00Z"
+    },
+    {
+      "id": 19,
+      "entity1_id": 1,
+      "entity2_id": 12,
+      "relationship_type": "family",
+      "description": "son-in-law",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:30:00Z"
+    },
+    {
+      "id": 20,
+      "entity1_id": 8,
+      "entity2_id": 18,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:58:00Z"
+    },
+    {
+      "id": 21,
+      "entity1_id": 1,
+      "entity2_id": 17,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:00+00:00"
+    },
+    {
+      "id": 22,
+      "entity1_id": 7,
+      "entity2_id": 19,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:45Z"
+    },
+    {
+      "id": 23,
+      "entity1_id": 10,
+      "entity2_id": 20,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:55+00:00"
+    },
+    {
+      "id": 24,
+      "entity1_id": 14,
+      "entity2_id": 21,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:59+00:00"
+    },
+    {
+      "id": 25,
+      "entity1_id": 12,
+      "entity2_id": 22,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-06T23:59:59+00:00"
+    },
+    {
+      "id": 26,
+      "entity1_id": 11,
+      "entity2_id": 23,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T00:00:00+00:00"
+    },
+    {
+      "id": 27,
+      "entity1_id": 13,
+      "entity2_id": 24,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T00:10:00+00:00"
+    },
+    {
+      "id": 28,
+      "entity1_id": 9,
+      "entity2_id": 25,
+      "relationship_type": "other",
+      "description": "birthdate",
+      "confidence": 0.95,
+      "created_at": "2025-11-07T00:15:00+00:00"
+    }
+  ]
+}
