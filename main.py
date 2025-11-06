@@ -50,6 +50,14 @@ from ui_components import (
     ChatInterface
 )
 
+# Import session UI components
+from session_ui_components import (
+    SessionSidebar,
+    SessionListItem,
+    NewSessionModal,
+    SessionRenameInlineForm
+)
+
 # Import validators
 from validators import (
     validate_chat_request,
@@ -101,8 +109,25 @@ app, rt = fast_app(
 def get():
     """Main page"""
     session_id = config.DEFAULT_SESSION_ID
+
+    # Ensure default session metadata exists
+    db.ensure_session_metadata_exists(session_id, "Default Session")
+
+    # Update last accessed time
+    db.update_session_access(session_id)
+
+    # Get conversation
     conversation = db.get_conversation(session_id)
-    return Title("PromptPane"), ChatInterface(session_id, conversation, db.get_conversation)
+
+    # Get all sessions for sidebar
+    sessions = db.get_all_session_metadata()
+
+    # Return full page with sidebar
+    return Title("PromptPane"), Div(
+        SessionSidebar(sessions, session_id),
+        ChatInterface(session_id, conversation, db.get_conversation),
+        cls="flex h-screen"
+    )
 
 @rt("/chat/{session_id}")
 async def post(session_id: str, message: str):
@@ -156,6 +181,10 @@ async def post(session_id: str, message: str):
 
     # Add user message
     db.add_message(session_id, "user", message)
+
+    # Update session metadata
+    db.update_session_access(session_id)
+    db.update_session_message_count(session_id)
 
     # Check for debug commands
     if is_debug_command(message):
@@ -353,6 +382,10 @@ async def post(session_id: str, message: str):
     # Add user message (button value)
     db.add_message(session_id, "user", message)
 
+    # Update session metadata
+    db.update_session_access(session_id)
+    db.update_session_message_count(session_id)
+
     # Check for debug commands
     if is_debug_command(message):
         # Handle /debug-help separately (doesn't raise error)
@@ -473,6 +506,159 @@ async def post(session_id: str, message: str):
         assistant_msg.get("timestamp"),
         session_id
     )
+
+# ============================================================================
+# Session Management Routes
+# ============================================================================
+
+@rt("/session/new")
+def post():
+    """Create a new session"""
+    import uuid
+
+    # Generate unique session ID
+    session_id = f"session-{uuid.uuid4().hex[:12]}"
+
+    # Create session metadata with temporary name
+    db.create_session(session_id, "New Session", "💬")
+
+    # Update access time
+    db.update_session_access(session_id)
+
+    # Redirect to new session
+    return RedirectResponse(f"/session/{session_id}/switch", status_code=303)
+
+
+@rt("/session/{session_id}/switch")
+def get(session_id: str):
+    """Switch to a different session"""
+    # Validate session ID
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError:
+        # Redirect to default session if invalid
+        return RedirectResponse("/", status_code=303)
+
+    # Ensure session metadata exists
+    db.ensure_session_metadata_exists(session_id, f"Session {session_id[:8]}")
+
+    # Update last accessed time
+    db.update_session_access(session_id)
+
+    # Get conversation
+    conversation = db.get_conversation(session_id)
+
+    # Get all sessions for sidebar
+    sessions = db.get_all_session_metadata()
+
+    # Return full page with sidebar
+    return Title("PromptPane"), Div(
+        SessionSidebar(sessions, session_id),
+        ChatInterface(session_id, conversation, db.get_conversation),
+        cls="flex h-screen"
+    )
+
+
+@rt("/session/{session_id}/delete")
+def delete(session_id: str):
+    """Delete a session and all its data"""
+    # Validate session ID
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError:
+        return Div()  # Return empty if invalid
+
+    # Don't allow deleting default session
+    if session_id == config.DEFAULT_SESSION_ID:
+        logger.warning(f"Attempted to delete default session")
+        return Div()
+
+    # Delete session
+    db.delete_session(session_id)
+
+    # Return empty div (will remove the session item from UI)
+    return Div()
+
+
+@rt("/session/{session_id}/rename-form")
+def get(session_id: str):
+    """Get inline rename form for a session"""
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError:
+        return Div()
+
+    session = db.get_session(session_id)
+    if not session:
+        return Div()
+
+    return SessionRenameInlineForm(session)
+
+
+@rt("/session/{session_id}/rename-cancel")
+def get(session_id: str):
+    """Cancel rename and restore original session name"""
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError:
+        return Div()
+
+    session = db.get_session(session_id)
+    if not session:
+        return Div()
+
+    # Return just the session name div (the part that was replaced)
+    return Div(
+        session["name"],
+        cls="font-semibold text-sm cursor-pointer",
+        hx_get=f"/session/{session_id}/switch",
+        hx_target="body",
+        hx_swap="outerHTML",
+        id=f"session-name-{session_id}"
+    )
+
+
+@rt("/session/{session_id}/rename")
+def put(session_id: str, name: str):
+    """Rename a session"""
+    # Validate session ID and name
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError:
+        return Div()
+
+    if not name or len(name) > 100:
+        return Div()
+
+    # Update session name
+    db.update_session_name(session_id, name)
+
+    # Get updated session
+    session = db.get_session(session_id)
+
+    # Return updated session item
+    return SessionListItem(session, session_id)
+
+
+@rt("/session/{session_id}/finalize")
+def post(session_id: str, name: str, icon: str = "💬"):
+    """Finalize new session with custom name and icon"""
+    # Validate inputs
+    try:
+        session_id = validate_session_id(session_id)
+    except SessionIDValidationError:
+        return RedirectResponse("/", status_code=303)
+
+    if not name or len(name) > 100:
+        name = f"Session {session_id[:8]}"
+
+    # Update session metadata
+    db.update_session_name(session_id, name)
+    db.update_session_icon(session_id, icon)
+
+    # Redirect to the session
+    return RedirectResponse(f"/session/{session_id}/switch", status_code=303)
+
 
 if __name__ == "__main__":
     serve(port=config.SERVER_PORT)

@@ -126,6 +126,27 @@ if entity_mentions not in db.t:
 EntityMention = entity_mentions.dataclass()
 
 # ============================================================================
+# Table 5: Session Metadata (Session Management)
+# ============================================================================
+
+session_metadata = db.t.session_metadata
+if session_metadata not in db.t:
+    session_metadata.create(
+        session_id=str,           # Primary key - unique session identifier
+        name=str,                 # User-friendly session name
+        created_at=str,           # ISO timestamp when session was created
+        last_accessed=str,        # ISO timestamp of most recent activity
+        message_count=int,        # Cached count of messages (for performance)
+        icon=str,                 # Optional emoji icon for the session
+        pk='session_id'
+    )
+    # Create index on last_accessed for sorting
+    db.execute("CREATE INDEX IF NOT EXISTS idx_session_last_accessed ON session_metadata(last_accessed)")
+
+# Generate SessionMetadata dataclass
+SessionMetadata = session_metadata.dataclass()
+
+# ============================================================================
 # Message CRUD Operations (ACTIVE)
 # ============================================================================
 
@@ -204,6 +225,14 @@ def clear_conversation(session_id: str) -> int:
 
     # Delete all messages for this session
     db.execute("DELETE FROM messages WHERE session_id = ?", [session_id])
+
+    # Update message count in session metadata (if table exists)
+    try:
+        update_session_message_count(session_id)
+    except Exception:
+        # Silently ignore if session_metadata table doesn't exist
+        # (for backwards compatibility with older databases/tests)
+        pass
 
     return count
 
@@ -613,6 +642,249 @@ def get_entity_by_name(session_id: str, name: str) -> Optional[dict]:
         "last_mentioned": result[7],
         "mention_count": result[8]
     }
+
+# ============================================================================
+# Session Management Operations
+# ============================================================================
+
+def create_session(session_id: str, name: str, icon: str = "💬") -> SessionMetadata:
+    """
+    Create a new session with metadata.
+
+    Args:
+        session_id: Unique session identifier
+        name: User-friendly session name
+        icon: Optional emoji icon (default: 💬)
+
+    Returns:
+        The created SessionMetadata object
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    session = session_metadata.insert(
+        session_id=session_id,
+        name=name,
+        created_at=timestamp,
+        last_accessed=timestamp,
+        message_count=0,
+        icon=icon
+    )
+
+    return session
+
+
+def get_session(session_id: str) -> Optional[dict]:
+    """
+    Get session metadata by ID.
+
+    Args:
+        session_id: The session identifier
+
+    Returns:
+        Session metadata dictionary or None if not found
+    """
+    result = db.execute(
+        """SELECT session_id, name, created_at, last_accessed, message_count, icon
+           FROM session_metadata
+           WHERE session_id = ?""",
+        [session_id]
+    ).fetchone()
+
+    if not result:
+        return None
+
+    return {
+        "session_id": result[0],
+        "name": result[1],
+        "created_at": result[2],
+        "last_accessed": result[3],
+        "message_count": result[4],
+        "icon": result[5]
+    }
+
+
+def get_all_session_metadata() -> list[dict]:
+    """
+    Get all sessions ordered by most recent activity.
+
+    Returns:
+        List of session metadata dictionaries
+    """
+    results = db.execute(
+        """SELECT session_id, name, created_at, last_accessed, message_count, icon
+           FROM session_metadata
+           ORDER BY last_accessed DESC"""
+    ).fetchall()
+
+    return [
+        {
+            "session_id": row[0],
+            "name": row[1],
+            "created_at": row[2],
+            "last_accessed": row[3],
+            "message_count": row[4],
+            "icon": row[5]
+        }
+        for row in results
+    ]
+
+
+def update_session_name(session_id: str, new_name: str) -> bool:
+    """
+    Rename a session.
+
+    Args:
+        session_id: The session identifier
+        new_name: New name for the session
+
+    Returns:
+        True if updated, False if session not found
+    """
+    # Check if session exists
+    if not get_session(session_id):
+        return False
+
+    db.execute(
+        "UPDATE session_metadata SET name = ? WHERE session_id = ?",
+        [new_name, session_id]
+    )
+
+    return True
+
+
+def update_session_icon(session_id: str, new_icon: str) -> bool:
+    """
+    Update session icon.
+
+    Args:
+        session_id: The session identifier
+        new_icon: New emoji icon
+
+    Returns:
+        True if updated, False if session not found
+    """
+    if not get_session(session_id):
+        return False
+
+    db.execute(
+        "UPDATE session_metadata SET icon = ? WHERE session_id = ?",
+        [new_icon, session_id]
+    )
+
+    return True
+
+
+def update_session_access(session_id: str) -> None:
+    """
+    Update last_accessed timestamp for a session.
+    Creates session metadata if it doesn't exist.
+
+    Args:
+        session_id: The session identifier
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    # Check if session metadata exists
+    existing = get_session(session_id)
+
+    if existing:
+        # Update last_accessed
+        db.execute(
+            "UPDATE session_metadata SET last_accessed = ? WHERE session_id = ?",
+            [timestamp, session_id]
+        )
+    else:
+        # Create new session metadata with default name
+        create_session(session_id, f"Session {session_id[:8]}", "💬")
+
+
+def update_session_message_count(session_id: str) -> None:
+    """
+    Update the cached message count for a session.
+
+    Args:
+        session_id: The session identifier
+    """
+    count = get_session_message_count(session_id)
+
+    # Check if metadata exists
+    if get_session(session_id):
+        db.execute(
+            "UPDATE session_metadata SET message_count = ? WHERE session_id = ?",
+            [count, session_id]
+        )
+    else:
+        # Create metadata if it doesn't exist
+        update_session_access(session_id)
+        db.execute(
+            "UPDATE session_metadata SET message_count = ? WHERE session_id = ?",
+            [count, session_id]
+        )
+
+
+def delete_session(session_id: str) -> int:
+    """
+    Delete a session and ALL associated data.
+    This includes messages, entities, relationships, and entity mentions.
+
+    Args:
+        session_id: The session identifier
+
+    Returns:
+        Total number of records deleted
+    """
+    deleted_count = 0
+
+    # Delete messages
+    deleted_count += db.execute(
+        "DELETE FROM messages WHERE session_id = ?",
+        [session_id]
+    ).rowcount if hasattr(db.execute("DELETE FROM messages WHERE session_id = ?", [session_id]), 'rowcount') else 0
+
+    # Get all entities for this session
+    entities_to_delete = db.execute(
+        "SELECT id FROM entities WHERE session_id = ?",
+        [session_id]
+    ).fetchall()
+
+    entity_ids = [row[0] for row in entities_to_delete]
+
+    # Delete entity mentions
+    for entity_id in entity_ids:
+        db.execute("DELETE FROM entity_mentions WHERE entity_id = ?", [entity_id])
+        deleted_count += 1
+
+    # Delete relationships
+    for entity_id in entity_ids:
+        db.execute(
+            "DELETE FROM relationships WHERE entity1_id = ? OR entity2_id = ?",
+            [entity_id, entity_id]
+        )
+        deleted_count += 1
+
+    # Delete entities
+    db.execute("DELETE FROM entities WHERE session_id = ?", [session_id])
+    deleted_count += len(entity_ids)
+
+    # Delete session metadata
+    db.execute("DELETE FROM session_metadata WHERE session_id = ?", [session_id])
+    deleted_count += 1
+
+    return deleted_count
+
+
+def ensure_session_metadata_exists(session_id: str, default_name: str = None) -> None:
+    """
+    Ensure session metadata exists, creating it if necessary.
+    Useful for migrating existing sessions that don't have metadata.
+
+    Args:
+        session_id: The session identifier
+        default_name: Default name to use if creating new metadata
+    """
+    if not get_session(session_id):
+        name = default_name or f"Session {session_id[:8]}"
+        create_session(session_id, name, "💬")
 
 # ============================================================================
 # Database Utilities
