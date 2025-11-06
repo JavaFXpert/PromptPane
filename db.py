@@ -306,13 +306,13 @@ def add_entity(
     confidence: float = 1.0
 ) -> Entity:
     """
-    Add or update an entity in the knowledge graph.
+    Add or update an entity in the GLOBAL knowledge graph.
 
-    If an entity with the same name already exists for this session,
-    update its last_mentioned timestamp and increment mention_count.
+    IMPORTANT: Entities are now GLOBAL across all sessions. If an entity with
+    the same name already exists anywhere, it will be updated (not duplicated).
 
     Args:
-        session_id: The session identifier
+        session_id: The session where this entity was mentioned (for tracking first discovery)
         entity_type: Type of entity (person, date, fact, preference, relationship, location)
         name: Entity name (e.g., "John", "Mom's birthday")
         value: Entity value (e.g., "brother", "June 15")
@@ -324,14 +324,14 @@ def add_entity(
     """
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    # Check if entity already exists
+    # Check if entity already exists GLOBALLY (not just in this session)
     existing = db.execute(
-        "SELECT * FROM entities WHERE session_id = ? AND name = ?",
-        [session_id, name]
+        "SELECT * FROM entities WHERE name = ?",
+        [name]
     ).fetchone()
 
     if existing:
-        # Update existing entity
+        # Update existing entity (global deduplication)
         entity_id = existing[0]
         db.execute(
             """UPDATE entities
@@ -343,7 +343,7 @@ def add_entity(
         # Return updated entity
         return entities.get(entity_id)
     else:
-        # Create new entity
+        # Create new entity (session_id marks where it was first discovered)
         entity = entities.insert(
             session_id=session_id,
             entity_type=entity_type,
@@ -359,15 +359,18 @@ def add_entity(
 
 
 def get_entities(
-    session_id: str,
+    session_id: Optional[str] = None,
     entity_type: Optional[str] = None,
     min_confidence: float = 0.0
 ) -> list[dict]:
     """
-    Retrieve entities from the knowledge graph.
+    Retrieve entities from the global knowledge graph.
+
+    IMPORTANT: Entities are now GLOBAL across all sessions by default.
+    Pass session_id to filter entities first discovered in a specific session (rare use case).
 
     Args:
-        session_id: The session identifier
+        session_id: Optional session filter (for entities first discovered in this session)
         entity_type: Optional filter by entity type
         min_confidence: Minimum confidence threshold (default: 0.0)
 
@@ -378,9 +381,14 @@ def get_entities(
         SELECT id, entity_type, name, value, description, confidence,
                created_at, last_mentioned, mention_count
         FROM entities
-        WHERE session_id = ? AND confidence >= ?
+        WHERE confidence >= ?
     """
-    params = [session_id, min_confidence]
+    params = [min_confidence]
+
+    # Optional: filter by session where entity was first discovered
+    if session_id:
+        query += " AND session_id = ?"
+        params.append(session_id)
 
     if entity_type:
         query += " AND entity_type = ?"
@@ -520,22 +528,26 @@ def add_entity_mention(
 
 
 def build_context_from_entities(
-    session_id: str,
+    session_id: Optional[str] = None,
     max_entities: int = 20,
     min_confidence: float = 0.5
 ) -> str:
     """
-    Build a context string from the knowledge graph to inject into prompts.
+    Build a context string from the GLOBAL knowledge graph to inject into prompts.
+
+    IMPORTANT: Entities are now GLOBAL. This function retrieves knowledge from
+    ALL sessions (not just the current one) to provide comprehensive context.
 
     Args:
-        session_id: The session identifier
+        session_id: DEPRECATED - kept for backwards compatibility but ignored
         max_entities: Maximum number of entities to include
         min_confidence: Minimum confidence threshold
 
     Returns:
         Formatted context string for system prompt
     """
-    entities_list = get_entities(session_id, min_confidence=min_confidence)
+    # Get global entities (ignore session_id - entities are now global)
+    entities_list = get_entities(min_confidence=min_confidence)
 
     if not entities_list:
         return ""
@@ -609,12 +621,14 @@ def delete_entity(entity_id: int) -> int:
     return 1
 
 
-def get_entity_by_name(session_id: str, name: str) -> Optional[dict]:
+def get_entity_by_name(session_id: Optional[str] = None, name: str = "") -> Optional[dict]:
     """
-    Get an entity by name for a specific session.
+    Get an entity by name from the GLOBAL knowledge graph.
+
+    IMPORTANT: Entities are now GLOBAL. This searches across all sessions.
 
     Args:
-        session_id: The session identifier
+        session_id: DEPRECATED - kept for backwards compatibility but ignored
         name: The entity name to search for
 
     Returns:
@@ -624,8 +638,8 @@ def get_entity_by_name(session_id: str, name: str) -> Optional[dict]:
         """SELECT id, entity_type, name, value, description, confidence,
                   created_at, last_mentioned, mention_count
            FROM entities
-           WHERE session_id = ? AND name = ?""",
-        [session_id, name]
+           WHERE name = ?""",
+        [name]
     ).fetchone()
 
     if not result:
@@ -824,8 +838,10 @@ def update_session_message_count(session_id: str) -> None:
 
 def delete_session(session_id: str) -> int:
     """
-    Delete a session and ALL associated data.
-    This includes messages, entities, relationships, and entity mentions.
+    Delete a session and session-specific data (messages, entity mentions).
+
+    IMPORTANT: Entities and relationships are GLOBAL and persist across sessions.
+    Only session-specific data (messages and their mentions) are deleted.
 
     Args:
         session_id: The session identifier
@@ -835,40 +851,32 @@ def delete_session(session_id: str) -> int:
     """
     deleted_count = 0
 
-    # Delete messages
-    deleted_count += db.execute(
-        "DELETE FROM messages WHERE session_id = ?",
-        [session_id]
-    ).rowcount if hasattr(db.execute("DELETE FROM messages WHERE session_id = ?", [session_id]), 'rowcount') else 0
-
-    # Get all entities for this session
-    entities_to_delete = db.execute(
-        "SELECT id FROM entities WHERE session_id = ?",
+    # Get message IDs for this session (before deletion)
+    message_ids = db.execute(
+        "SELECT id FROM messages WHERE session_id = ?",
         [session_id]
     ).fetchall()
+    message_ids = [row[0] for row in message_ids]
 
-    entity_ids = [row[0] for row in entities_to_delete]
-
-    # Delete entity mentions
-    for entity_id in entity_ids:
-        db.execute("DELETE FROM entity_mentions WHERE entity_id = ?", [entity_id])
-        deleted_count += 1
-
-    # Delete relationships
-    for entity_id in entity_ids:
-        db.execute(
-            "DELETE FROM relationships WHERE entity1_id = ? OR entity2_id = ?",
-            [entity_id, entity_id]
+    # Delete entity mentions that reference messages from this session
+    # (entities themselves remain global)
+    for message_id in message_ids:
+        result = db.execute(
+            "DELETE FROM entity_mentions WHERE message_id = ?",
+            [message_id]
         )
         deleted_count += 1
 
-    # Delete entities
-    db.execute("DELETE FROM entities WHERE session_id = ?", [session_id])
-    deleted_count += len(entity_ids)
+    # Delete messages for this session
+    result = db.execute("DELETE FROM messages WHERE session_id = ?", [session_id])
+    deleted_count += len(message_ids)
 
     # Delete session metadata
     db.execute("DELETE FROM session_metadata WHERE session_id = ?", [session_id])
     deleted_count += 1
+
+    # NOTE: Entities and relationships are NOT deleted - they persist globally
+    # This allows knowledge to accumulate across all sessions
 
     return deleted_count
 

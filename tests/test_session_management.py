@@ -353,34 +353,38 @@ class TestDeleteSession:
         # Messages should be gone
         assert len(db.get_conversation("test-session")) == 0
 
-    def test_delete_session_removes_entities(self, temp_db):
-        """Test that deleting session also deletes entities"""
+    def test_delete_session_keeps_entities_global(self, temp_db):
+        """Test that entities PERSIST when session is deleted (global knowledge)"""
         db.create_session("test-session", "Test")
 
         # Add entities
         db.add_entity("test-session", "person", "John", "brother")
         db.add_entity("test-session", "fact", "color", "blue")
 
-        # Verify entities exist
-        assert len(db.get_entities("test-session")) == 2
+        # Verify entities exist globally
+        all_entities = db.get_entities()
+        assert len(all_entities) == 2
 
         # Delete session
         db.delete_session("test-session")
 
-        # Entities should be gone
-        assert len(db.get_entities("test-session")) == 0
+        # Entities should STILL EXIST globally (not deleted with session)
+        all_entities_after = db.get_entities()
+        assert len(all_entities_after) == 2
+        assert any(e["name"] == "John" for e in all_entities_after)
+        assert any(e["name"] == "color" for e in all_entities_after)
 
-    def test_delete_session_cascade_to_relationships(self, temp_db):
-        """Test that deleting session cascades to relationships"""
+    def test_delete_session_keeps_relationships_global(self, temp_db):
+        """Test that relationships PERSIST when session is deleted (global knowledge)"""
         db.create_session("test-session", "Test")
 
         # Add entities and relationship
         db.add_entity("test-session", "person", "John", "person")
         db.add_entity("test-session", "person", "Mom", "mother")
 
-        entities = db.get_entities("test-session")
-        john_id = entities[0]["id"]
-        mom_id = entities[1]["id"]
+        entities = db.get_entities()
+        john_id = next(e["id"] for e in entities if e["name"] == "John")
+        mom_id = next(e["id"] for e in entities if e["name"] == "Mom")
 
         db.add_relationship("test-session", john_id, mom_id, "family", "son of")
 
@@ -390,8 +394,13 @@ class TestDeleteSession:
         # Delete session
         db.delete_session("test-session")
 
-        # Entities and relationships should be gone
-        assert len(db.get_entities("test-session")) == 0
+        # Entities and relationships should STILL EXIST globally
+        all_entities_after = db.get_entities()
+        assert len(all_entities_after) == 2
+
+        # Relationships should still exist
+        john_rels_after = db.get_relationships(john_id)
+        assert len(john_rels_after) > 0
 
 # ============================================================================
 # Session Helpers Tests

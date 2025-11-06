@@ -415,13 +415,15 @@ class TestGetEntityByName:
         entity = db.get_entity_by_name(sample_session_id, "NonExistent")
         assert entity is None
 
-    def test_get_entity_by_name_session_isolation(self, temp_db):
-        """Test that entities are isolated by session"""
+    def test_get_entity_by_name_global_knowledge(self, temp_db):
+        """Test that entities are GLOBAL across all sessions"""
         db.add_entity("session-1", "person", "John", "brother")
 
-        # Should not find in different session
-        entity = db.get_entity_by_name("session-2", "John")
-        assert entity is None
+        # Should find entity globally (entities are no longer session-isolated)
+        entity = db.get_entity_by_name(name="John")
+        assert entity is not None
+        assert entity["name"] == "John"
+        assert entity["value"] == "brother"
 
 # ============================================================================
 # Entity Extraction Tests
