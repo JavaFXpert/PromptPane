@@ -586,11 +586,12 @@ async def post(session_id: str, concept: str):
     # Build system prompt with special instruction for concept explanations
     system_prompt_with_instruction = f"""{SYSTEM_PROMPT}
 
-When explaining concepts:
+IMPORTANT - For this concept explanation:
 - Provide a brief, beginner-friendly explanation (2-4 sentences)
-- You may mark related technical terms with <concept>term</concept> tags for further exploration
+- MUST mark 2-3 related technical terms with <concept>term</concept> tags for further exploration
 - Keep it concise but clear
 - Use examples if helpful
+- Example: "A <concept>compiler</concept> translates <concept>source code</concept> into <concept>machine code</concept>."
 
 {kg_context}"""
 
@@ -611,11 +612,16 @@ When explaining concepts:
         chat_completion = client.chat.completions.create(
             messages=messages_for_api,
             model=config.GROQ_MODEL,
-            temperature=0.5,  # Lower temperature for factual explanations
+            temperature=0.7,  # Standard temperature (was 0.5, increased to encourage concept tagging)
             max_tokens=500    # Limit length for brief explanations
         )
 
         explanation = chat_completion.choices[0].message.content
+
+        # DEBUG: Log raw LLM response
+        print(f"[DEBUG /explain-concept] Raw LLM response for '{concept}':")
+        print(f"[DEBUG /explain-concept] {explanation}")
+        print(f"[DEBUG /explain-concept] Contains <concept> tags: {'<concept>' in explanation}")
 
         # Check if explanation was successful
         if not explanation or explanation.strip() == "":
