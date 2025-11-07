@@ -721,14 +721,25 @@ No explanations, just the topic."""}
     # Build system prompt for video request
     system_prompt_with_instruction = f"""{SYSTEM_PROMPT}
 
-IMPORTANT - Video Request:
-The user wants a highly rated, SHORT YouTube video (5-15 minutes max) about: {video_topic}
+CRITICAL - Video Request:
+The user clicked the Video button requesting a YouTube video about: {video_topic}
 
-Your task:
-1. Find a well-rated, concise video that explains this topic clearly
-2. Use the <mui type="video" url="..." caption="..."> tag to embed the video
-3. Provide a brief 1-2 sentence introduction before the video
-4. After the video, optionally suggest 1-2 related concepts they might want to explore
+YOU MUST:
+1. Use browser_search to find a highly rated YouTube video (5-15 minutes) about "{video_topic}"
+2. Search query example: "best short youtube video explaining {video_topic}"
+3. ALWAYS embed the video using: <mui type="video" url="YOUTUBE_URL_HERE" caption="Video title">
+4. Provide a brief 1-2 sentence introduction BEFORE the video tag
+5. Optionally suggest related <concept> links AFTER the video
+
+REQUIRED FORMAT:
+Here's a great video that explains [topic]:
+
+<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Video Title - Duration">
+</mui>
+
+Related concepts: <concept>term1</concept>, <concept>term2</concept>
+
+DO NOT respond without including a video. The user specifically requested a video.
 
 {kg_context}"""
 
@@ -745,13 +756,14 @@ Your task:
             "content": msg["content"]
         })
 
-    # Call Groq API
+    # Call Groq API with tools enabled (browser_search for finding videos)
     try:
         chat_completion = client.chat.completions.create(
             messages=messages_for_api,
             model=config.GROQ_MODEL,
             temperature=0.7,
-            max_tokens=1000
+            max_tokens=1000,
+            tools=config.GROQ_TOOLS  # Enable browser_search to find YouTube videos
         )
 
         video_response = chat_completion.choices[0].message.content
@@ -759,6 +771,12 @@ Your task:
         # Check if response was successful
         if not video_response or video_response.strip() == "":
             video_response = f"I apologize, but I couldn't find a suitable video about '{video_topic}'. Please try searching directly on YouTube."
+
+        # Validate that response includes a video tag
+        if '<mui type="video"' not in video_response:
+            logger.warning(f"LLM response for video request did not include video tag. Response: {video_response[:200]}")
+            # Add a helpful message if no video was included
+            video_response = f"I apologize, but I wasn't able to find a suitable video about '{video_topic}' at the moment. You can search directly on YouTube for: **{video_topic} tutorial**\n\nWould you like me to help with something else related to {video_topic}?"
 
     except Exception as e:
         logger.error(f"Error getting video recommendation: {e}")
