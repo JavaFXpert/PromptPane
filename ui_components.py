@@ -84,7 +84,6 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         # Split rendered markdown by HTML comment placeholders and interleave with ALL components
         # (both MUI components and concept components)
         content_parts = []
-        remaining = rendered_md
 
         # Combine all components with their placeholders
         all_components = []
@@ -93,8 +92,18 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         for i, component in enumerate(concept_components):
             all_components.append((f"<!--CONCEPT_{i}-->", component))
 
-        # Process all placeholders in order they appear in the content
+        # Sort components by their position in the rendered markdown to maintain order
+        component_positions = []
         for placeholder, component in all_components:
+            pos = rendered_md.find(placeholder)
+            if pos != -1:
+                component_positions.append((pos, placeholder, component))
+
+        component_positions.sort(key=lambda x: x[0])  # Sort by position
+
+        # Process placeholders in order they appear in the text
+        remaining = rendered_md
+        for pos, placeholder, component in component_positions:
             if placeholder in remaining:
                 before, remaining = remaining.split(placeholder, 1)
                 if before.strip():
