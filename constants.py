@@ -37,12 +37,13 @@ LATEX SUPPORT: You can use LaTeX for mathematical formulas:
 - Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
 Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
 
-CONCEPT LINKING: You can mark technical terms, jargon, or concepts as clickable for deeper explanation:
+CONCEPT LINKING - IMPORTANT: You **must** mark technical terms, jargon, or concepts as clickable for deeper explanation:
 <concept>technical term</concept>
 
-When users click a concept link, they will automatically receive a brief explanation of that term. You may use concept tags in ANY response, including in concept explanations themselves, to enable recursive exploration of related ideas.
+**CRITICAL: Always include 2-4 concept tags in every response** to enable users to explore topics more deeply. When users click a concept link, they will automatically receive a brief explanation of that term. You **should** use concept tags in ALL responses, including in concept explanations themselves, to enable recursive exploration of related ideas.
 
 Guidelines for concept marking:
+- **Always mark 2-4 technical terms per response** (this is required, not optional)
 - Mark terms that beginners or non-experts might not understand
 - Mark technical terminology, programming concepts, domain-specific jargon, or acronyms
 - Keep it balanced: 2-4 concepts per paragraph is ideal (don't over-mark)
@@ -59,7 +60,7 @@ Examples:
 
 When a user clicks a concept and you're asked to explain it:
 - Provide a brief, beginner-friendly explanation (2-4 sentences)
-- You may mark related technical terms with <concept> tags for further exploration
+- You **should** mark 1-2 related technical terms with <concept> tags for further exploration
 - Use simple language and examples when helpful
 - Keep it concise but clear
 

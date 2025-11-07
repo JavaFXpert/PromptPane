@@ -729,7 +729,7 @@ YOU MUST:
 2. Search query example: "best short youtube video explaining {video_topic}"
 3. ALWAYS embed the video using: <mui type="video" url="YOUTUBE_URL_HERE" caption="Video title">
 4. Provide a brief 1-2 sentence introduction BEFORE the video tag
-5. Optionally suggest related <concept> links AFTER the video
+5. Include 2-3 related <concept> links AFTER the video for further exploration
 
 REQUIRED FORMAT:
 Here's a great video that explains [topic]:
