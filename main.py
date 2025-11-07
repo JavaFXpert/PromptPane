@@ -825,9 +825,23 @@ def get(entity_id: int):
 
 
 @rt("/entity/{entity_id}/update")
-def put(entity_id: int, name: str, value: str, description: str = "", confidence: float = 1.0):
-    """Update an entity in the knowledge graph JSON"""
-    # Validate inputs
+def put(entity_id: int, request):
+    """Update an entity in the knowledge graph JSON with support for type-specific attributes"""
+    import asyncio
+
+    # Get form data
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    form_data = loop.run_until_complete(request.form())
+    loop.close()
+
+    # Extract core fields
+    name = form_data.get("name", "")
+    value = form_data.get("value", "")
+    description = form_data.get("description", "")
+    confidence = float(form_data.get("confidence", 1.0))
+
+    # Validate core inputs
     if not name or not value:
         return Div()
 
@@ -839,11 +853,45 @@ def put(entity_id: int, name: str, value: str, description: str = "", confidence
     for e in kg.get("entities", []):
         if e["id"] == entity_id:
             entity = e
-            # Update fields
+            # Update core fields
             e["name"] = name
             e["value"] = value
             e["description"] = description
-            e["confidence"] = float(confidence)
+            e["confidence"] = confidence
+
+            # Update type-specific attributes (prefixed with attr_)
+            for field_name, field_value in form_data.items():
+                if field_name.startswith("attr_"):
+                    attr_name = field_name[5:]  # Remove "attr_" prefix
+
+                    # Convert value to appropriate type based on existing value
+                    if attr_name in e:
+                        existing_value = e[attr_name]
+
+                        # Boolean conversion
+                        if isinstance(existing_value, bool):
+                            e[attr_name] = field_value == "true"
+                        # Numeric conversion
+                        elif isinstance(existing_value, int):
+                            try:
+                                e[attr_name] = int(field_value) if field_value else 0
+                            except ValueError:
+                                e[attr_name] = field_value
+                        elif isinstance(existing_value, float):
+                            try:
+                                e[attr_name] = float(field_value) if field_value else 0.0
+                            except ValueError:
+                                e[attr_name] = field_value
+                        # List conversion (comma-separated)
+                        elif isinstance(existing_value, list):
+                            e[attr_name] = [item.strip() for item in field_value.split(",")] if field_value else []
+                        # Default: string
+                        else:
+                            e[attr_name] = field_value
+                    else:
+                        # New attribute - store as-is (string)
+                        e[attr_name] = field_value
+
             break
 
     if not entity:

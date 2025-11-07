@@ -53,11 +53,28 @@ def EntityListItem(entity: dict, show_actions: bool = True) -> Any:
     # Get icon for entity type
     icon = ENTITY_TYPE_ICONS.get(entity_type, "•")
 
-    # Build display text
+    # Build display text with key type-specific attributes
+    detail_parts = [value]
+
+    # Add key type-specific attributes to display
+    if entity_type == "person":
+        if entity.get("birthdate"):
+            detail_parts.append(f"Born: {entity['birthdate']}")
+        if entity.get("gender"):
+            detail_parts.append(entity['gender'].capitalize())
+    elif entity_type == "date":
+        if entity.get("recurring"):
+            detail_parts.append("Recurring")
+        if entity.get("importance"):
+            detail_parts.append(f"{entity['importance'].capitalize()} priority")
+    elif entity_type == "preference":
+        if entity.get("strength"):
+            detail_parts.append(f"{entity['strength'].capitalize()} preference")
+
     if description:
-        detail_text = f"{value} • {description}"
-    else:
-        detail_text = value
+        detail_parts.append(description)
+
+    detail_text = " • ".join(detail_parts)
 
     return Div(
         # Left side: icon and entity info
@@ -134,77 +151,110 @@ def EntityEditForm(entity: dict) -> Any:
         Edit form component
     """
     entity_id = entity["id"]
+    entity_type = entity.get("entity_type", "")
+
+    # Core fields that are always present and shown
+    core_fields = {"id", "entity_type", "name", "value", "description", "confidence",
+                   "created_at", "last_mentioned", "mention_count"}
+
+    # Get type-specific attributes (anything not in core fields)
+    type_specific_attrs = {k: v for k, v in entity.items() if k not in core_fields}
+
+    # Build form fields
+    form_fields = []
+
+    # Core fields
+    form_fields.extend([
+        # Name field
+        Div(
+            Label("Name", cls="label label-text text-xs"),
+            Input(
+                type="text",
+                name="name",
+                value=entity["name"],
+                cls="input input-bordered input-xs w-full",
+                required=True
+            ),
+            cls="form-control mb-2"
+        ),
+
+        # Value field
+        Div(
+            Label("Value", cls="label label-text text-xs"),
+            Input(
+                type="text",
+                name="value",
+                value=entity["value"],
+                cls="input input-bordered input-xs w-full",
+                required=True
+            ),
+            cls="form-control mb-2"
+        ),
+
+        # Description field
+        Div(
+            Label("Description (optional)", cls="label label-text text-xs"),
+            Input(
+                type="text",
+                name="description",
+                value=entity.get("description", ""),
+                cls="input input-bordered input-xs w-full"
+            ),
+            cls="form-control mb-2"
+        ),
+    ])
+
+    # Type-specific attributes section
+    if type_specific_attrs:
+        form_fields.append(
+            Div(
+                Label("Type-Specific Attributes", cls="label label-text text-xs font-bold mt-2"),
+                cls="form-control mb-1"
+            )
+        )
+
+        for attr_name, attr_value in sorted(type_specific_attrs.items()):
+            field = _create_type_specific_field(attr_name, attr_value, entity_type)
+            if field:
+                form_fields.append(field)
+
+    # Confidence field
+    form_fields.append(
+        Div(
+            Label(f"Confidence: {int(entity.get('confidence', 1.0) * 100)}%", cls="label label-text text-xs"),
+            Input(
+                type="range",
+                name="confidence",
+                value=str(entity.get("confidence", 1.0)),
+                min="0",
+                max="1",
+                step="0.1",
+                cls="range range-xs",
+                oninput="this.previousElementSibling.textContent = `Confidence: ${Math.round(this.value * 100)}%`"
+            ),
+            cls="form-control mb-3"
+        )
+    )
+
+    # Buttons
+    form_fields.append(
+        Div(
+            Button("✓", type="submit", cls="btn btn-success btn-xs"),
+            Button(
+                "✕",
+                type="button",
+                cls="btn btn-ghost btn-xs",
+                hx_get=f"/entity/{entity_id}/cancel-edit",
+                hx_target=f"#entity-{entity_id}",
+                hx_swap="outerHTML"
+            ),
+            cls="flex gap-1"
+        )
+    )
 
     return Form(
         Div(
-            # Name field
-            Div(
-                Label("Name", cls="label label-text text-xs"),
-                Input(
-                    type="text",
-                    name="name",
-                    value=entity["name"],
-                    cls="input input-bordered input-xs w-full",
-                    required=True
-                ),
-                cls="form-control mb-2"
-            ),
-
-            # Value field
-            Div(
-                Label("Value", cls="label label-text text-xs"),
-                Input(
-                    type="text",
-                    name="value",
-                    value=entity["value"],
-                    cls="input input-bordered input-xs w-full",
-                    required=True
-                ),
-                cls="form-control mb-2"
-            ),
-
-            # Description field
-            Div(
-                Label("Description (optional)", cls="label label-text text-xs"),
-                Input(
-                    type="text",
-                    name="description",
-                    value=entity.get("description", ""),
-                    cls="input input-bordered input-xs w-full"
-                ),
-                cls="form-control mb-2"
-            ),
-
-            # Confidence field
-            Div(
-                Label(f"Confidence: {int(entity.get('confidence', 1.0) * 100)}%", cls="label label-text text-xs"),
-                Input(
-                    type="range",
-                    name="confidence",
-                    value=str(entity.get("confidence", 1.0)),
-                    min="0",
-                    max="1",
-                    step="0.1",
-                    cls="range range-xs",
-                    oninput="this.previousElementSibling.textContent = `Confidence: ${Math.round(this.value * 100)}%`"
-                ),
-                cls="form-control mb-3"
-            ),
-
-            # Buttons
-            Div(
-                Button("✓", type="submit", cls="btn btn-success btn-xs"),
-                Button(
-                    "✕",
-                    type="button",
-                    cls="btn btn-ghost btn-xs",
-                    hx_get=f"/entity/{entity_id}/cancel-edit",
-                    hx_target=f"#entity-{entity_id}",
-                    hx_swap="outerHTML"
-                ),
-                cls="flex gap-1"
-            ),
-
+            *form_fields,
             cls="space-y-2"
         ),
 
@@ -213,6 +263,130 @@ def EntityEditForm(entity: dict) -> Any:
         hx_swap="outerHTML",
         cls="p-2 bg-base-200 rounded",
         id=f"entity-{entity_id}"
+    )
+
+
+def _create_type_specific_field(attr_name: str, attr_value: Any, entity_type: str) -> Any:
+    """
+    Create an appropriate input field for a type-specific attribute.
+
+    Args:
+        attr_name: Name of the attribute
+        attr_value: Current value of the attribute
+        entity_type: Type of entity (person, date, etc.)
+
+    Returns:
+        Form control component for this attribute
+    """
+    # Handle boolean fields
+    if isinstance(attr_value, bool):
+        return Div(
+            Label(
+                Input(
+                    type="checkbox",
+                    name=f"attr_{attr_name}",
+                    value="true",
+                    checked=attr_value,
+                    cls="checkbox checkbox-xs mr-2"
+                ),
+                attr_name.replace("_", " ").capitalize(),
+                cls="label label-text text-xs cursor-pointer"
+            ),
+            cls="form-control mb-2"
+        )
+
+    # Handle select fields for known attributes
+    if attr_name == "importance":
+        return Div(
+            Label(attr_name.replace("_", " ").capitalize(), cls="label label-text text-xs"),
+            Select(
+                Option("low", value="low", selected=(attr_value == "low")),
+                Option("medium", value="medium", selected=(attr_value == "medium")),
+                Option("high", value="high", selected=(attr_value == "high")),
+                name=f"attr_{attr_name}",
+                cls="select select-bordered select-xs w-full"
+            ),
+            cls="form-control mb-2"
+        )
+
+    if attr_name == "strength":
+        return Div(
+            Label(attr_name.replace("_", " ").capitalize(), cls="label label-text text-xs"),
+            Select(
+                Option("weak", value="weak", selected=(attr_value == "weak")),
+                Option("moderate", value="moderate", selected=(attr_value == "moderate")),
+                Option("strong", value="strong", selected=(attr_value == "strong")),
+                name=f"attr_{attr_name}",
+                cls="select select-bordered select-xs w-full"
+            ),
+            cls="form-control mb-2"
+        )
+
+    if attr_name == "gender":
+        return Div(
+            Label(attr_name.replace("_", " ").capitalize(), cls="label label-text text-xs"),
+            Select(
+                Option("", value="", selected=(not attr_value)),
+                Option("male", value="male", selected=(attr_value == "male")),
+                Option("female", value="female", selected=(attr_value == "female")),
+                Option("other", value="other", selected=(attr_value not in ["male", "female", ""])),
+                name=f"attr_{attr_name}",
+                cls="select select-bordered select-xs w-full"
+            ),
+            cls="form-control mb-2"
+        )
+
+    # Handle date fields
+    if attr_name == "birthdate" or "date" in attr_name.lower():
+        return Div(
+            Label(attr_name.replace("_", " ").capitalize(), cls="label label-text text-xs"),
+            Input(
+                type="date",
+                name=f"attr_{attr_name}",
+                value=str(attr_value) if attr_value else "",
+                cls="input input-bordered input-xs w-full"
+            ),
+            cls="form-control mb-2"
+        )
+
+    # Handle number fields
+    if isinstance(attr_value, (int, float)) and not isinstance(attr_value, bool):
+        return Div(
+            Label(attr_name.replace("_", " ").capitalize(), cls="label label-text text-xs"),
+            Input(
+                type="number",
+                name=f"attr_{attr_name}",
+                value=str(attr_value),
+                cls="input input-bordered input-xs w-full"
+            ),
+            cls="form-control mb-2"
+        )
+
+    # Handle list/array fields
+    if isinstance(attr_value, list):
+        value_str = ", ".join(str(v) for v in attr_value)
+        return Div(
+            Label(f"{attr_name.replace('_', ' ').capitalize()} (comma-separated)", cls="label label-text text-xs"),
+            Input(
+                type="text",
+                name=f"attr_{attr_name}",
+                value=value_str,
+                cls="input input-bordered input-xs w-full",
+                placeholder="item1, item2, item3"
+            ),
+            cls="form-control mb-2"
+        )
+
+    # Default: text field for strings and other types
+    return Div(
+        Label(attr_name.replace("_", " ").capitalize(), cls="label label-text text-xs"),
+        Input(
+            type="text",
+            name=f"attr_{attr_name}",
+            value=str(attr_value) if attr_value is not None else "",
+            cls="input input-bordered input-xs w-full"
+        ),
+        cls="form-control mb-2"
     )
 
 
