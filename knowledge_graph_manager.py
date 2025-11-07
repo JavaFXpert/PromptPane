@@ -18,7 +18,7 @@ import config
 KG_FILE_PATH = os.path.join(os.path.dirname(__file__), "knowledge_graph.json")
 
 # LLM System Prompt for Knowledge Graph Updates
-KNOWLEDGE_GRAPH_UPDATE_PROMPT = """You are an intelligent knowledge graph curator. Your job is to maintain a comprehensive, accurate knowledge graph based on conversations.
+KNOWLEDGE_GRAPH_UPDATE_PROMPT = """You are an intelligent knowledge graph curator. Your job is to maintain a SELECTIVE, personally-relevant knowledge graph based on conversations.
 
 CURRENT KNOWLEDGE GRAPH:
 {current_kg_json}
@@ -27,9 +27,26 @@ NEW CONVERSATION:
 User: {user_message}
 Assistant: {assistant_response}
 
+IMPORTANT - BE HIGHLY SELECTIVE:
+Only extract information that is PERSONALLY RELEVANT to the user. DO NOT extract:
+- General educational content (e.g., "Python is a programming language")
+- Generic explanations of concepts (e.g., "dynamic typing means...")
+- Common knowledge or facts not specific to the user
+- Technical definitions or tutorials
+- Information from concept explanations or educational responses
+
+ONLY extract information that is ABOUT THE USER or DIRECTLY RELEVANT TO THEM:
+- Personal relationships (family, friends, colleagues)
+- Personal preferences, habits, or interests
+- Important dates related to the user (birthdays of loved ones, anniversaries, deadlines)
+- User's locations, work, projects
+- Specific facts the user has shared about their life
+- Things the user owns, plans to do, or cares about
+
 YOUR TASKS:
-1. **Extract Information**: Identify facts, people, dates, preferences, locations, and relationships from the conversation
-2. **Check for Duplicates**: Before adding new entities, check if similar entities already exist
+1. **Evaluate Relevance FIRST**: Before extracting anything, ask "Is this about the user or directly relevant to their life?"
+2. **Extract Selectively**: Only identify personally relevant facts, people, dates, preferences, locations, and relationships
+3. **Check for Duplicates**: Before adding new entities, check if similar entities already exist
    - "Christian Jones" should merge with existing "Christian" if they're the same person
    - "John's mom" should link to existing "Mom" entity
    - Use context clues to determine if entities are the same
@@ -40,8 +57,8 @@ YOUR TASKS:
 
 ENTITY TYPES AND TYPE-SPECIFIC ATTRIBUTES:
 
-**person**: People mentioned (family, friends, colleagues)
-  Core attributes (required): id, entity_type, name, value, description, confidence
+**person**: People mentioned (family, friends, colleagues) - ONLY people personally known to the user
+  Core attributes (required): id, entity_type, name, value, description, confidence, relevance_score
   Type-specific attributes (optional):
   - birthdate: "YYYY-MM-DD" format for date of birth
   - gender: "male", "female", or other gender identity
@@ -51,32 +68,32 @@ ENTITY TYPES AND TYPE-SPECIFIC ATTRIBUTES:
   - phone: phone number
   - pronouns: preferred pronouns (e.g., "she/her", "he/him", "they/them")
 
-**date**: Important dates (birthdays, anniversaries, deadlines)
-  Core attributes (required): id, entity_type, name, value, description, confidence
+**date**: Important dates (birthdays, anniversaries, deadlines) - ONLY dates personally relevant to the user
+  Core attributes (required): id, entity_type, name, value, description, confidence, relevance_score
   Type-specific attributes (optional):
   - recurring: true/false for annual events (birthdays, anniversaries)
   - reminder_days: number of days before to remind
   - importance: "low", "medium", "high"
   - event_type: "birthday", "anniversary", "deadline", "appointment", etc.
 
-**fact**: General facts and information
-  Core attributes (required): id, entity_type, name, value, description, confidence
+**fact**: Facts specifically about the user's life (NOT general knowledge)
+  Core attributes (required): id, entity_type, name, value, description, confidence, relevance_score
   Type-specific attributes (optional):
   - category: type of fact (e.g., "education", "health", "history")
   - verified: true/false if fact has been confirmed
   - source: where the fact came from
   - date_learned: when this fact was learned
 
-**preference**: User preferences (favorite foods, hobbies, likes/dislikes)
-  Core attributes (required): id, entity_type, name, value, description, confidence
+**preference**: User's personal preferences (favorite foods, hobbies, likes/dislikes)
+  Core attributes (required): id, entity_type, name, value, description, confidence, relevance_score
   Type-specific attributes (optional):
   - category: type of preference ("food", "music", "hobby", "activity", etc.)
   - strength: "weak", "moderate", "strong" to indicate intensity
   - likes: array of specific items liked
   - dislikes: array of specific items disliked
 
-**location**: Places (cities, addresses, venues)
-  Core attributes (required): id, entity_type, name, value, description, confidence
+**location**: Places personally relevant to the user (home, work, favorite places)
+  Core attributes (required): id, entity_type, name, value, description, confidence, relevance_score
   Type-specific attributes (optional):
   - address: full street address
   - city: city name
@@ -91,6 +108,23 @@ RELATIONSHIP TYPES:
 - location: Location associations (lives in, works at, from)
 - interest: Shared interests or activities
 - other: Any other type of relationship
+
+RELEVANCE SCORING (CRITICAL):
+Every entity MUST have a "relevance_score" field (0.0-1.0) indicating how personally relevant it is to the user:
+- 1.0 = Highly personal (immediate family, user's own preferences, user's home/work)
+- 0.9 = Very relevant (close friends, important dates, significant locations)
+- 0.8 = Moderately relevant (colleagues, user's projects, user's belongings)
+- 0.7 = Somewhat relevant (acquaintances, minor preferences)
+- 0.6 or below = Questionable relevance (should rarely be saved)
+
+Examples:
+- "My daughter Kelli" → relevance_score: 1.0 (immediate family)
+- "I love Italian food" → relevance_score: 0.9 (user's preference)
+- "Python is a programming language" → DO NOT SAVE (general knowledge, not personal)
+- "Dynamic typing means..." → DO NOT SAVE (educational content, not personal)
+- "My colleague John" → relevance_score: 0.8 (work relationship)
+
+When in doubt, DO NOT save the entity - err on the side of being selective.
 
 IMPORTANT: When extracting information, use type-specific attributes instead of cramming everything into the description field. For example:
 - If someone mentions "Kelli was born on May 15, 1980", set birthdate="1980-05-15" on the person entity
@@ -124,6 +158,7 @@ KNOWLEDGE GRAPH STRUCTURE:
       "value": "daughter",
       "description": "One of two daughters",
       "confidence": 0.95,
+      "relevance_score": 1.0,
       "created_at": "ISO timestamp",
       "last_mentioned": "ISO timestamp",
       "mention_count": 3,
@@ -141,6 +176,7 @@ KNOWLEDGE GRAPH STRUCTURE:
       "value": "1975-11-14",
       "description": "Date of marriage",
       "confidence": 0.99,
+      "relevance_score": 1.0,
       "created_at": "ISO timestamp",
       "last_mentioned": "ISO timestamp",
       "mention_count": 1,
@@ -158,6 +194,7 @@ KNOWLEDGE GRAPH STRUCTURE:
       "value": "Italian cuisine",
       "description": "Favorite type of food",
       "confidence": 0.9,
+      "relevance_score": 0.9,
       "created_at": "ISO timestamp",
       "last_mentioned": "ISO timestamp",
       "mention_count": 2,
@@ -182,14 +219,18 @@ KNOWLEDGE GRAPH STRUCTURE:
 }}
 
 IMPORTANT RULES:
-1. Keep all existing entities unless they are clear duplicates
-2. When merging duplicates, keep the most complete/informative version
-3. Increment mention_count for updated entities
-4. Update last_mentioned timestamp for referenced entities
-5. Preserve entity IDs when updating (don't create new IDs for existing entities)
-6. Only create new entity IDs for genuinely new entities
-7. Set confidence based on how certain you are (explicit facts = 0.95, implied = 0.7-0.8, guessed = 0.5-0.6)
-8. Return the COMPLETE updated knowledge graph (not just changes)
+1. BE SELECTIVE - Only extract personally relevant information about the user
+2. Skip all general knowledge, educational content, and concept explanations
+3. Keep all existing entities unless they are clear duplicates
+4. When merging duplicates, keep the most complete/informative version
+5. Increment mention_count for updated entities
+6. Update last_mentioned timestamp for referenced entities
+7. Preserve entity IDs when updating (don't create new IDs for existing entities)
+8. Only create new entity IDs for genuinely new entities
+9. Set confidence based on how certain you are (explicit facts = 0.95, implied = 0.7-0.8, guessed = 0.5-0.6)
+10. Set relevance_score for ALL entities (1.0 = highly personal, 0.8 = moderately relevant, 0.6 or below = questionable)
+11. Return the COMPLETE updated knowledge graph (not just changes)
+12. If no personally relevant information is found, return the knowledge graph unchanged
 
 Return ONLY valid JSON with the complete updated knowledge graph. No explanations, no markdown code blocks, just the JSON."""
 
@@ -292,6 +333,12 @@ def validate_kg_structure(kg: dict) -> bool:
             print(f"Entity missing required keys: {entity}")
             return False
 
+        # Validate relevance_score if present
+        if "relevance_score" in entity:
+            score = entity["relevance_score"]
+            if not isinstance(score, (int, float)) or score < 0.0 or score > 1.0:
+                print(f"Warning: relevance_score must be between 0.0 and 1.0 in entity {entity.get('name')}")
+
         # Optional: Validate type-specific attributes have correct types (non-blocking)
         _validate_type_specific_attributes(entity)
 
@@ -391,11 +438,56 @@ def validate_kg_update(old_kg: dict, new_kg: dict) -> bool:
     return True
 
 
+def filter_low_relevance_entities(kg: dict, threshold: float = 0.75) -> tuple[dict, list[dict]]:
+    """
+    Filter out entities with low relevance scores that need user confirmation.
+
+    Args:
+        kg: Knowledge graph dictionary
+        threshold: Relevance score threshold (entities below this need confirmation)
+
+    Returns:
+        Tuple of (filtered_kg with only high-relevance entities, list of low-relevance entities)
+    """
+    high_relevance_entities = []
+    low_relevance_entities = []
+
+    for entity in kg.get("entities", []):
+        relevance = entity.get("relevance_score", 1.0)  # Default to high if not specified
+
+        if relevance >= threshold:
+            high_relevance_entities.append(entity)
+        else:
+            # Extract key info for user review
+            low_relevance_entities.append({
+                "name": entity.get("name"),
+                "type": entity.get("entity_type"),
+                "value": entity.get("value"),
+                "description": entity.get("description"),
+                "relevance_score": relevance,
+                "full_entity": entity  # Keep full entity for potential restoration
+            })
+
+    # Create filtered knowledge graph
+    filtered_kg = kg.copy()
+    filtered_kg["entities"] = high_relevance_entities
+
+    # Remove relationships that reference removed entities
+    kept_entity_ids = {e["id"] for e in high_relevance_entities}
+    filtered_kg["relationships"] = [
+        r for r in kg.get("relationships", [])
+        if r["entity1_id"] in kept_entity_ids and r["entity2_id"] in kept_entity_ids
+    ]
+
+    return filtered_kg, low_relevance_entities
+
+
 def update_knowledge_graph_with_llm(
     user_message: str,
     assistant_response: str,
     client: Any,
-    current_kg: Optional[dict] = None
+    current_kg: Optional[dict] = None,
+    auto_filter_low_relevance: bool = True
 ) -> Optional[dict]:
     """
     Use LLM to intelligently update the knowledge graph.
@@ -403,14 +495,16 @@ def update_knowledge_graph_with_llm(
     This is the core function that:
     1. Loads current knowledge graph
     2. Passes it to LLM with new conversation
-    3. LLM returns updated graph with semantic deduplication
-    4. Validates and saves the update
+    3. LLM returns updated graph with semantic deduplication and relevance scoring
+    4. Filters out low-relevance entities (if auto_filter_low_relevance=True)
+    5. Validates and saves the update
 
     Args:
         user_message: User's message
         assistant_response: Assistant's response
         client: Groq client instance
         current_kg: Optional current knowledge graph (will load if not provided)
+        auto_filter_low_relevance: If True, automatically filter out entities with relevance < 0.75
 
     Returns:
         Updated knowledge graph dict, or None if update failed
@@ -457,8 +551,28 @@ def update_knowledge_graph_with_llm(
             print("Knowledge graph update validation failed, keeping old version")
             return None
 
+        # Filter low-relevance entities if enabled
+        if auto_filter_low_relevance:
+            filtered_kg, low_relevance = filter_low_relevance_entities(updated_kg, threshold=0.75)
+
+            if low_relevance:
+                print(f"\n[Knowledge Graph] Filtered out {len(low_relevance)} low-relevance entities (relevance_score < 0.75):")
+                for entity in low_relevance:
+                    print(f"  - {entity['name']} ({entity['type']}): {entity.get('description', entity['value'])} [score: {entity['relevance_score']}]")
+                print("[Knowledge Graph] These entities were not saved. Only personally relevant information is kept.\n")
+
+            updated_kg = filtered_kg
+
         # Save updated graph
         if save_knowledge_graph(updated_kg):
+            # Log what was actually saved
+            new_entity_count = len(updated_kg.get("entities", []))
+            old_entity_count = len(current_kg.get("entities", []))
+            if new_entity_count > old_entity_count:
+                print(f"[Knowledge Graph] Added {new_entity_count - old_entity_count} new entities")
+            elif new_entity_count < old_entity_count:
+                print(f"[Knowledge Graph] Removed {old_entity_count - new_entity_count} entities (deduplication)")
+
             return updated_kg
         else:
             print("Failed to save knowledge graph")
