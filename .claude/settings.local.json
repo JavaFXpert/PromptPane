@@ -16,7 +16,9 @@
       "WebFetch(domain:claudelog.com)",
       "WebFetch(domain:www.anthropic.com)",
       "WebFetch(domain:monsterui.answer.ai)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:daisyui.com)"
     ],
     "deny": [],
     "ask": []

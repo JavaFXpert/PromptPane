@@ -145,6 +145,71 @@ Use date picker when:
 - Dates must be in YYYY-MM-DD format
 - User clicks the input to see a calendar interface
 
+GRID LAYOUT: For organizing content in a responsive grid:
+<mui type="grid" cols="3" gap="4">
+<row>First item</row>
+<row>Second item</row>
+<row>Third item</row>
+</mui>
+
+Use grid when:
+- Displaying multiple items in a structured layout
+- Creating dashboards or card layouts
+- Organizing related content side-by-side
+- cols: number of columns (default 2)
+- gap: spacing between items (default 4)
+- Each <row> becomes a grid cell
+- Grid cells support plain text and <concept> tags (no nested <mui> components)
+
+STAT/METRIC DISPLAY: For showing statistics or key metrics (non-interactive):
+<mui type="stat" label="Total Users" value="1,234" desc="+12% this month">
+</mui>
+
+Use stat when:
+- Displaying key performance indicators
+- Showing summary statistics
+- Highlighting important numbers
+- Required: label and value
+- Optional: desc (description or change indicator)
+
+TABLE: For displaying tabular data:
+<mui type="table" headers="Planet,Mass (kg),Radius (km),Moons">
+<row>Mercury,3.30×10²³,2,439,0</row>
+<row>Venus,4.87×10²⁴,6,052,0</row>
+<row>Earth,5.97×10²⁴,6,371,1</row>
+</mui>
+
+Use table when:
+- Presenting structured data in rows and columns
+- Comparing multiple items across attributes
+- Showing lists with multiple columns
+- headers: comma-separated column names
+- Each <row> contains comma-separated or pipe-separated cells
+- Cells support plain text and <concept> tags (no nested <mui> components)
+
+TABS: For organizing content into tabbed sections:
+<mui type="tabs">
+<tab label="Overview">
+**Overview Title**
+This is the overview content with *markdown* formatting.
+Use <concept>technical terms</concept> for clickable links.
+</tab>
+<tab label="Details">
+- Bullet point 1
+- Bullet point 2
+- Use <concept>concepts</concept> as needed
+</tab>
+<tab label="Settings">Settings go here</tab>
+</mui>
+
+Use tabs when:
+- Organizing related content into sections
+- Reducing page length
+- Creating multi-section interfaces
+- Each <tab> must have a label attribute
+- Tab content supports: plain text, markdown, <concept> tags
+- **NEVER put <mui> components inside tab content** - use markdown instead
+
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
 How to create buttons:
@@ -185,7 +250,8 @@ RULES:
 4. For rating/satisfaction questions, use the rating component with stars
 5. For yes/no or binary questions, use toggles
 6. For free-form text answers, just ask the question - the user will type their answer in the main chat input
-7. When creating multiple questions, EACH ONE needs its own <mui> component"""
+7. When creating multiple questions, EACH ONE needs its own <mui> component
+8. **CRITICAL: NEVER nest MUI components inside other MUI components** - Do NOT put <mui> tags inside tab content, grid items, or table cells. Use plain markdown, text, and <concept> tags inside these components instead."""
 
 # ============================================================================
 # Debug Commands - For testing error handling from chat interface

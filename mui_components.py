@@ -26,6 +26,8 @@ class MUITagParser(HTMLParser):
         self.mui_tags = []
         self.current_tag = None
         self.tag_depth = 0
+        self.in_option = False
+        self.capture_raw = False  # Flag to capture raw HTML content
 
     def handle_starttag(self, tag, attrs):
         if tag == 'mui':
@@ -37,6 +39,7 @@ class MUITagParser(HTMLParser):
                 'content': ''
             }
             self.tag_depth = 1
+            self.capture_raw = True  # Start capturing raw content
         elif self.current_tag and tag == 'option':
             attrs_dict = dict(attrs)
             self.current_tag['options'].append({
@@ -44,6 +47,12 @@ class MUITagParser(HTMLParser):
                 'label': '',
                 'attrs': attrs_dict
             })
+            self.in_option = True
+        elif self.current_tag and self.capture_raw:
+            # Capture raw HTML tags (like <tab>, <row>, etc.)
+            attrs_str = ' '.join([f'{k}="{v}"' for k, v in attrs])
+            tag_html = f'<{tag} {attrs_str}>' if attrs_str else f'<{tag}>'
+            self.current_tag['content'] += tag_html
 
     def handle_endtag(self, tag):
         if tag == 'mui' and self.current_tag:
@@ -51,12 +60,21 @@ class MUITagParser(HTMLParser):
             if self.tag_depth == 0:
                 self.mui_tags.append(self.current_tag)
                 self.current_tag = None
+                self.capture_raw = False
+        elif self.current_tag and tag == 'option':
+            self.in_option = False
+        elif self.current_tag and self.capture_raw and tag != 'mui':
+            # Capture closing tags
+            self.current_tag['content'] += f'</{tag}>'
 
     def handle_data(self, data):
         if self.current_tag:
-            # Add data to the last option if we have options
-            if self.current_tag['options']:
+            # Add data to the last option if we're inside an option tag
+            if self.in_option and self.current_tag['options']:
                 self.current_tag['options'][-1]['label'] += data.strip()
+            # Also capture all raw content for components like tabs, grid, table
+            elif self.capture_raw and not self.in_option:
+                self.current_tag['content'] += data
 
 def parse_mui_tags(content: str) -> tuple[list[dict[str, Any]], str]:
     """Extract MUI tags from content and return tags and cleaned content"""
@@ -612,6 +630,276 @@ def generate_mui_date(tag_info, session_id):
         cls="space-y-2 my-4 p-4 border border-border rounded-lg"
     )
 
+def generate_mui_grid(tag_info, session_id):
+    """Generate MonsterUI grid layout component"""
+    attrs = tag_info['attrs']
+    cols = attrs.get('cols', '2')
+    gap = attrs.get('gap', '4')
+    content = tag_info['content'].strip()
+
+    if not content:
+        return Div("Error: Grid must have content", cls="text-error")
+
+    # Parse rows from content (each <row> tag becomes a grid item)
+    row_pattern = r'<row>(.*?)</row>'
+    rows = re.findall(row_pattern, content, re.DOTALL)
+
+    if not rows:
+        # If no <row> tags, just split by newlines
+        rows = [line.strip() for line in content.split('\n') if line.strip()]
+
+    # Process concept tags and render markdown in each grid item
+    grid_items = []
+    for row in rows:
+        row_text = row.strip()
+
+        # Extract concept tags first
+        concept_extracted, concept_components = extract_concept_tags(row_text, session_id)
+
+        # Check if content has markdown indicators
+        has_markdown = any(indicator in concept_extracted for indicator in ['**', '*', '#', '`', '[', '-', '1.', '!'])
+
+        if has_markdown:
+            # Render as markdown
+            rendered_md = render_md(concept_extracted)
+        else:
+            # Plain text
+            rendered_md = concept_extracted
+
+        # Replace concept placeholders with actual components
+        row_parts = []
+        remaining = rendered_md
+        for idx, component in enumerate(concept_components):
+            placeholder = f'<!--CONCEPT_{idx}-->'
+            if placeholder in remaining:
+                before, remaining = remaining.split(placeholder, 1)
+                if before.strip():
+                    row_parts.append(Safe(before))
+                row_parts.append(component)
+
+        # Add any remaining content
+        if remaining.strip():
+            row_parts.append(Safe(remaining))
+
+        # If no components, just show rendered content
+        if not row_parts:
+            row_parts = [Safe(rendered_md)]
+
+        grid_items.append(Div(*row_parts, cls="p-4 border border-border rounded-lg"))
+
+    # DaisyUI grid classes
+    grid_cls = f"grid grid-cols-{cols} gap-{gap} my-4"
+
+    return Div(*grid_items, cls=grid_cls)
+
+def generate_mui_stat(tag_info, session_id):
+    """Generate MonsterUI stat/metric display component"""
+    attrs = tag_info['attrs']
+    label = attrs.get('label', '')
+    value = attrs.get('value', '')
+    desc = attrs.get('desc', attrs.get('change', ''))  # Support both 'desc' and 'change'
+
+    if not label or not value:
+        return Div("Error: Stat requires label and value attributes", cls="text-error")
+
+    stat_content = [
+        Div(label, cls="stat-title"),
+        Div(value, cls="stat-value")
+    ]
+
+    if desc:
+        stat_content.append(Div(desc, cls="stat-desc"))
+
+    return Div(
+        Div(*stat_content, cls="stat"),
+        cls="stats shadow my-4"
+    )
+
+def generate_mui_table(tag_info, session_id):
+    """Generate MonsterUI table component"""
+    attrs = tag_info['attrs']
+    headers_str = attrs.get('headers', '')
+    content = tag_info['content'].strip()
+
+    if not headers_str:
+        return Div("Error: Table requires headers attribute", cls="text-error")
+
+    # Parse headers
+    headers = [h.strip() for h in headers_str.split(',')]
+
+    # Parse rows from content
+    row_pattern = r'<row>(.*?)</row>'
+    rows_data = re.findall(row_pattern, content, re.DOTALL)
+
+    if not rows_data:
+        # Fallback: split by newlines
+        rows_data = [line.strip() for line in content.split('\n') if line.strip()]
+
+    # Build table rows
+    table_rows = []
+    for row_str in rows_data:
+        # Split row by comma (or pipe if present)
+        if '|' in row_str:
+            cells = [cell.strip() for cell in row_str.split('|')]
+        else:
+            cells = [cell.strip() for cell in row_str.split(',')]
+
+        # Process concept tags in each cell
+        processed_cells = []
+        for cell in cells:
+            concept_extracted, concept_components = extract_concept_tags(cell, session_id)
+
+            # If cell has concept tags, build content parts
+            if concept_components:
+                cell_parts = []
+                remaining = concept_extracted
+                for idx, component in enumerate(concept_components):
+                    placeholder = f'<!--CONCEPT_{idx}-->'
+                    if placeholder in remaining:
+                        before, remaining = remaining.split(placeholder, 1)
+                        if before.strip():
+                            cell_parts.append(before)
+                        cell_parts.append(component)
+
+                # Add remaining text
+                if remaining.strip():
+                    cell_parts.append(remaining)
+
+                processed_cells.append(Td(*cell_parts))
+            else:
+                # No concepts, just plain text
+                processed_cells.append(Td(cell))
+
+        table_rows.append(Tr(*processed_cells))
+
+    return Table(
+        Thead(Tr(*[Th(h) for h in headers])),
+        Tbody(*table_rows),
+        cls="table table-zebra my-4"
+    )
+
+def generate_mui_tabs(tag_info, session_id):
+    """Generate MonsterUI tabs component"""
+    content = tag_info['content'].strip()
+
+    # Debug logging
+    print(f"[DEBUG] Tabs content received: {content[:500]}...")
+
+    # Parse tab items from content - handle both straight and curly quotes
+    # Pattern matches: label="..." or label="..." or label='...' or label='...'
+    tab_pattern = r'<tab\s+label=["\u201c\u201d\'](.*?)["\u201c\u201d\']>(.*?)</tab>'
+    tabs = re.findall(tab_pattern, content, re.DOTALL)
+
+    print(f"[DEBUG] Found {len(tabs)} tabs")
+    for i, (label, _) in enumerate(tabs):
+        print(f"[DEBUG] Tab {i}: {label}")
+
+    if not tabs:
+        error_msg = f"Error: Tabs must contain <tab label=\"...\">content</tab> items. Received content: {content[:100]}"
+        print(f"[ERROR] {error_msg}")
+        return Div(
+            P("Tab parsing failed!", cls="text-error font-bold"),
+            P(f"Expected format: <tab label=\"Label\">Content</tab>", cls="text-sm"),
+            P(f"Received: {content[:200]}...", cls="text-sm text-muted-foreground"),
+            cls="p-4 border border-error rounded-lg my-4"
+        )
+
+    tab_id = f"tabs-{int(time.time() * 1000000)}"
+
+    # Build tab buttons and content
+    tab_buttons = []
+    tab_contents = []
+
+    for i, (label, tab_content) in enumerate(tabs):
+        is_first = (i == 0)
+
+        # Button for each tab
+        active_cls = "tab-active" if is_first else ""
+        tab_buttons.append(
+            Button(
+                label,
+                type="button",
+                role="tab",
+                cls=f"tab {active_cls}",
+                data_tab_index=str(i),
+                data_tab_container=tab_id,
+                onclick=f"""
+                    console.log('Tab clicked: {label}', 'index: {i}');
+                    // Remove active class from all tabs in this container
+                    document.querySelectorAll('[data-tab-container="{tab_id}"]').forEach(tab => {{
+                        tab.classList.remove('tab-active');
+                    }});
+                    // Add active class to clicked tab
+                    this.classList.add('tab-active');
+                    // Hide all tab contents
+                    document.querySelectorAll('[id^="{tab_id}-content-"]').forEach(content => {{
+                        content.style.display = 'none';
+                    }});
+                    // Show selected tab content
+                    const targetContent = document.getElementById('{tab_id}-content-{i}');
+                    if (targetContent) {{
+                        targetContent.style.display = 'block';
+                        console.log('Showing content for tab {i}');
+                    }} else {{
+                        console.error('Content element not found:', '{tab_id}-content-{i}');
+                    }}
+                """
+            )
+        )
+
+        # Tab content panel - extract concepts first, then render
+        content_text = tab_content.strip()
+
+        # Extract concept tags from tab content
+        concept_extracted, concept_components = extract_concept_tags(content_text, session_id)
+
+        # Simple check: if content has markdown indicators, render it
+        has_markdown = any(indicator in concept_extracted for indicator in ['**', '*', '#', '`', '[', '-', '1.'])
+
+        if has_markdown:
+            # Render as markdown using MonsterUI's render_md
+            rendered_md = render_md(concept_extracted)
+        else:
+            # Plain text
+            rendered_md = concept_extracted
+
+        # Replace concept placeholders with actual components
+        content_parts = []
+        remaining = rendered_md
+        for idx, component in enumerate(concept_components):
+            placeholder = f'<!--CONCEPT_{idx}-->'
+            if placeholder in remaining:
+                before, remaining = remaining.split(placeholder, 1)
+                if before.strip():
+                    content_parts.append(Safe(before))
+                content_parts.append(component)
+
+        # Add any remaining content
+        if remaining.strip():
+            content_parts.append(Safe(remaining))
+
+        # If no components, just show rendered content
+        if not content_parts:
+            content_parts = [Safe(rendered_md)]
+
+        display_style = "block" if is_first else "none"
+        tab_contents.append(
+            Div(
+                *content_parts,
+                id=f"{tab_id}-content-{i}",
+                cls="p-4 border border-border rounded-b-lg bg-base-100",
+                style=f"display:{display_style};"
+            )
+        )
+
+    print(f"[DEBUG] Generated {len(tab_buttons)} tab buttons and {len(tab_contents)} content panels")
+
+    return Div(
+        Div(*tab_buttons, role="tablist", cls="tabs tabs-bordered mb-2"),
+        Div(*tab_contents, cls="tab-content-container"),
+        cls="my-4 p-2 border border-border rounded-lg"
+    )
+
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
     component_type = tag_info['type']
@@ -636,6 +924,14 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_video(tag_info, session_id)
     elif component_type == 'date':
         return generate_mui_date(tag_info, session_id)
+    elif component_type == 'grid':
+        return generate_mui_grid(tag_info, session_id)
+    elif component_type == 'stat':
+        return generate_mui_stat(tag_info, session_id)
+    elif component_type == 'table':
+        return generate_mui_table(tag_info, session_id)
+    elif component_type == 'tabs':
+        return generate_mui_tabs(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()
