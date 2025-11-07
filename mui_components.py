@@ -465,26 +465,19 @@ def generate_mui_toggle(tag_info, session_id):
     # Generate unique ID for this toggle
     toggle_id = f"toggle-{int(time.time() * 1000000)}"
 
-    # Build switch with explicit input control
+    # Build switch with explicit input control using DaisyUI toggle classes
     switch_input = Input(
         type="checkbox",
         id=toggle_id,
         checked=default_checked,
-        cls="uk-switch-input"
-    )
-
-    # Wrap in label with MonsterUI switch styling
-    switch_component = Label(
-        switch_input,
-        Span(cls="uk-switch-slider"),
-        cls="uk-switch cursor-pointer"
+        cls="toggle toggle-primary"
     )
 
     return Div(
-        # Label for the toggle if provided
+        # Label and toggle switch
         Div(
-            Label(label, cls="font-semibold mb-2") if label else None,
-            switch_component,
+            Label(label, cls="font-semibold") if label else None,
+            switch_input,
             cls="flex items-center gap-3 mb-3"
         ),
 
