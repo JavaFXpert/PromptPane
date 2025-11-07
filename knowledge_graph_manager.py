@@ -38,13 +38,52 @@ YOUR TASKS:
 5. **Create Relationships**: Add relationships between entities (family, work, location, etc.)
 6. **Maintain Consistency**: Ensure all entity IDs in relationships reference valid entities
 
-ENTITY TYPES:
-- person: People mentioned (family, friends, colleagues)
-- date: Important dates (birthdays, anniversaries, deadlines)
-- fact: General facts and information
-- preference: User preferences (favorite foods, hobbies, likes/dislikes)
-- location: Places (cities, addresses, venues)
-- relationship: Should NOT be used - use the relationships array instead
+ENTITY TYPES AND TYPE-SPECIFIC ATTRIBUTES:
+
+**person**: People mentioned (family, friends, colleagues)
+  Core attributes (required): id, entity_type, name, value, description, confidence
+  Type-specific attributes (optional):
+  - birthdate: "YYYY-MM-DD" format for date of birth
+  - gender: "male", "female", or other gender identity
+  - occupation: job title or profession
+  - location: current city/state of residence
+  - email: email address
+  - phone: phone number
+  - pronouns: preferred pronouns (e.g., "she/her", "he/him", "they/them")
+
+**date**: Important dates (birthdays, anniversaries, deadlines)
+  Core attributes (required): id, entity_type, name, value, description, confidence
+  Type-specific attributes (optional):
+  - recurring: true/false for annual events (birthdays, anniversaries)
+  - reminder_days: number of days before to remind
+  - importance: "low", "medium", "high"
+  - event_type: "birthday", "anniversary", "deadline", "appointment", etc.
+
+**fact**: General facts and information
+  Core attributes (required): id, entity_type, name, value, description, confidence
+  Type-specific attributes (optional):
+  - category: type of fact (e.g., "education", "health", "history")
+  - verified: true/false if fact has been confirmed
+  - source: where the fact came from
+  - date_learned: when this fact was learned
+
+**preference**: User preferences (favorite foods, hobbies, likes/dislikes)
+  Core attributes (required): id, entity_type, name, value, description, confidence
+  Type-specific attributes (optional):
+  - category: type of preference ("food", "music", "hobby", "activity", etc.)
+  - strength: "weak", "moderate", "strong" to indicate intensity
+  - likes: array of specific items liked
+  - dislikes: array of specific items disliked
+
+**location**: Places (cities, addresses, venues)
+  Core attributes (required): id, entity_type, name, value, description, confidence
+  Type-specific attributes (optional):
+  - address: full street address
+  - city: city name
+  - state: state/province
+  - country: country name
+  - zip: postal code
+  - type: "residence", "work", "vacation", "restaurant", etc.
 
 RELATIONSHIP TYPES:
 - family: Family relationships (parent, sibling, child, spouse)
@@ -53,21 +92,80 @@ RELATIONSHIP TYPES:
 - interest: Shared interests or activities
 - other: Any other type of relationship
 
+IMPORTANT: When extracting information, use type-specific attributes instead of cramming everything into the description field. For example:
+- If someone mentions "Kelli was born on May 15, 1980", set birthdate="1980-05-15" on the person entity
+- If someone mentions "My wedding anniversary is November 14th", set recurring=true on the date entity
+- If location details are mentioned, use city, state, address fields instead of just description
+
+CREATING NEW ENTITY TYPES:
+If you encounter information that doesn't fit well into the predefined entity types (person, date, fact, preference, location), you may create NEW entity types with appropriate type-specific attributes. Use your judgment to determine:
+- What the new entity_type should be called (e.g., "pet", "vehicle", "organization", "book", "project")
+- What type-specific attributes would be useful for that type (e.g., pets might have "species", "breed", "age")
+- Always include the required core attributes (id, entity_type, name, value, description, confidence)
+
+Examples of new entity types you might create:
+- entity_type: "pet" with attributes like species, breed, age, color
+- entity_type: "vehicle" with attributes like make, model, year, color
+- entity_type: "organization" with attributes like industry, role, website
+- entity_type: "book" with attributes like author, genre, year_published, rating
+
+Be thoughtful about when to create new types vs. using existing ones. Only create a new type if the information has distinct attributes that don't fit well into existing types.
+
 KNOWLEDGE GRAPH STRUCTURE:
 {{
   "version": "1.0",
   "last_updated": "ISO timestamp",
   "entities": [
     {{
-      "id": integer (unique ID),
-      "entity_type": "person|date|fact|preference|location",
-      "name": "Entity Name",
-      "value": "Primary value or descriptor",
-      "description": "Additional context (optional)",
-      "confidence": 0.0-1.0,
+      // Example person entity with type-specific attributes
+      "id": 1,
+      "entity_type": "person",
+      "name": "Kelli Jones",
+      "value": "daughter",
+      "description": "One of two daughters",
+      "confidence": 0.95,
       "created_at": "ISO timestamp",
       "last_mentioned": "ISO timestamp",
-      "mention_count": integer
+      "mention_count": 3,
+      // Type-specific attributes for person
+      "birthdate": "1980-05-15",
+      "gender": "female",
+      "occupation": "teacher",
+      "location": "Seattle, WA"
+    }},
+    {{
+      // Example date entity with type-specific attributes
+      "id": 2,
+      "entity_type": "date",
+      "name": "Wedding Anniversary",
+      "value": "1975-11-14",
+      "description": "Date of marriage",
+      "confidence": 0.99,
+      "created_at": "ISO timestamp",
+      "last_mentioned": "ISO timestamp",
+      "mention_count": 1,
+      // Type-specific attributes for date
+      "recurring": true,
+      "reminder_days": 7,
+      "importance": "high",
+      "event_type": "anniversary"
+    }},
+    {{
+      // Example preference entity with type-specific attributes
+      "id": 3,
+      "entity_type": "preference",
+      "name": "Food preference",
+      "value": "Italian cuisine",
+      "description": "Favorite type of food",
+      "confidence": 0.9,
+      "created_at": "ISO timestamp",
+      "last_mentioned": "ISO timestamp",
+      "mention_count": 2,
+      // Type-specific attributes for preference
+      "category": "food",
+      "strength": "strong",
+      "likes": ["pasta", "pizza", "risotto"],
+      "dislikes": ["cilantro"]
     }}
   ],
   "relationships": [
@@ -161,6 +259,9 @@ def validate_kg_structure(kg: dict) -> bool:
     """
     Validate that knowledge graph has correct structure.
 
+    This validation is FLEXIBLE - it only checks for required fields and allows
+    type-specific attributes to be added freely.
+
     Args:
         kg: Knowledge graph dictionary to validate
 
@@ -183,12 +284,16 @@ def validate_kg_structure(kg: dict) -> bool:
         print("Relationships must be a list")
         return False
 
-    # Validate each entity has required fields
+    # Validate each entity has required core fields
+    # NOTE: Allows additional type-specific attributes beyond these required ones
     for entity in kg["entities"]:
         required_entity_keys = {"id", "entity_type", "name", "value"}
         if not all(key in entity for key in required_entity_keys):
             print(f"Entity missing required keys: {entity}")
             return False
+
+        # Optional: Validate type-specific attributes have correct types (non-blocking)
+        _validate_type_specific_attributes(entity)
 
     # Validate each relationship has required fields
     for rel in kg["relationships"]:
@@ -196,6 +301,50 @@ def validate_kg_structure(kg: dict) -> bool:
         if not all(key in rel for key in required_rel_keys):
             print(f"Relationship missing required keys: {rel}")
             return False
+
+    return True
+
+
+def _validate_type_specific_attributes(entity: dict) -> bool:
+    """
+    Validate type-specific attributes have correct types.
+
+    This is a soft validation - prints warnings but doesn't fail.
+
+    Args:
+        entity: Entity dictionary to validate
+
+    Returns:
+        True if valid, False if warnings (but doesn't block save)
+    """
+    entity_type = entity.get("entity_type")
+
+    # Person-specific validations
+    if entity_type == "person":
+        if "birthdate" in entity and not isinstance(entity["birthdate"], str):
+            print(f"Warning: person.birthdate should be string (YYYY-MM-DD) in entity {entity.get('name')}")
+        if "gender" in entity and not isinstance(entity["gender"], str):
+            print(f"Warning: person.gender should be string in entity {entity.get('name')}")
+        if "email" in entity and not isinstance(entity["email"], str):
+            print(f"Warning: person.email should be string in entity {entity.get('name')}")
+
+    # Date-specific validations
+    elif entity_type == "date":
+        if "recurring" in entity and not isinstance(entity["recurring"], bool):
+            print(f"Warning: date.recurring should be boolean in entity {entity.get('name')}")
+        if "reminder_days" in entity and not isinstance(entity["reminder_days"], (int, float)):
+            print(f"Warning: date.reminder_days should be number in entity {entity.get('name')}")
+        if "importance" in entity and entity["importance"] not in ["low", "medium", "high"]:
+            print(f"Warning: date.importance should be 'low', 'medium', or 'high' in entity {entity.get('name')}")
+
+    # Preference-specific validations
+    elif entity_type == "preference":
+        if "strength" in entity and entity["strength"] not in ["weak", "moderate", "strong"]:
+            print(f"Warning: preference.strength should be 'weak', 'moderate', or 'strong' in entity {entity.get('name')}")
+        if "likes" in entity and not isinstance(entity["likes"], list):
+            print(f"Warning: preference.likes should be array in entity {entity.get('name')}")
+        if "dislikes" in entity and not isinstance(entity["dislikes"], list):
+            print(f"Warning: preference.dislikes should be array in entity {entity.get('name')}")
 
     return True
 

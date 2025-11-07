@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_updated": "2025-11-06T21:13:34.409292+00:00",
+  "last_updated": "2025-11-07T13:56:18.700851+00:00",
   "entities": [
     {
       "id": 1,
@@ -8,10 +8,12 @@
       "name": "James Weaver",
       "value": "self",
       "description": "User's full name, goes by Jim",
-      "confidence": 0.99,
+      "confidence": 1.0,
       "created_at": "2025-11-06T03:54:52.268524+00:00",
       "last_mentioned": "2025-11-07T02:00:00Z",
-      "mention_count": 11
+      "mention_count": 11,
+      "birthdate": "1955-04-19",
+      "gender": "male"
     },
     {
       "id": 3,
@@ -21,19 +23,10 @@
       "description": "",
       "confidence": 0.99,
       "created_at": "2025-11-06T03:56:36.112725+00:00",
-      "last_mentioned": "2025-11-06T03:56:36.112725+00:00",
-      "mention_count": 1
-    },
-    {
-      "id": 4,
-      "entity_type": "date",
-      "name": "Julie birth date",
-      "value": "1955-10-13",
-      "description": "Wife's date of birth",
-      "confidence": 0.99,
-      "created_at": "2025-11-06T03:56:36.114443+00:00",
-      "last_mentioned": "2025-11-06T03:56:36.114443+00:00",
-      "mention_count": 1
+      "last_mentioned": "2025-11-07T13:30:00Z",
+      "mention_count": 2,
+      "gender": "female",
+      "birthdate": "1955-10-13"
     },
     {
       "id": 5,
@@ -44,7 +37,10 @@
       "confidence": 0.99,
       "created_at": "2025-11-06T03:56:36.115727+00:00",
       "last_mentioned": "2025-11-06T03:56:36.115727+00:00",
-      "mention_count": 1
+      "mention_count": 1,
+      "recurring": true,
+      "importance": "high",
+      "event_type": "anniversary"
     },
     {
       "id": 7,
@@ -55,7 +51,9 @@
       "confidence": 1.0,
       "created_at": "2025-11-06T03:59:22.697504+00:00",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 14
+      "mention_count": 14,
+      "birthdate": "1979-10-03",
+      "gender": "female"
     },
     {
       "id": 8,
@@ -66,7 +64,9 @@
       "confidence": 0.9,
       "created_at": "2025-11-06T03:59:22.698269+00:00",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 13
+      "mention_count": 13,
+      "birthdate": "1995-08-22",
+      "gender": "female"
     },
     {
       "id": 9,
@@ -77,7 +77,9 @@
       "confidence": 0.95,
       "created_at": "2025-11-06T20:00:00Z",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 8
+      "mention_count": 8,
+      "birthdate": "1994-12-14",
+      "gender": "male"
     },
     {
       "id": 10,
@@ -88,7 +90,9 @@
       "confidence": 0.95,
       "created_at": "2025-11-06T20:00:00Z",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 8
+      "mention_count": 8,
+      "birthdate": "2019-07-05",
+      "gender": "male"
     },
     {
       "id": 11,
@@ -99,7 +103,9 @@
       "confidence": 0.95,
       "created_at": "2025-11-06T20:00:00Z",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 7
+      "mention_count": 7,
+      "birthdate": "2021-09-04",
+      "gender": "male"
     },
     {
       "id": 12,
@@ -110,7 +116,9 @@
       "confidence": 0.95,
       "created_at": "2025-11-06T20:05:00Z",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 7
+      "mention_count": 7,
+      "birthdate": "1977-10-22",
+      "gender": "male"
     },
     {
       "id": 13,
@@ -121,7 +129,9 @@
       "confidence": 0.95,
       "created_at": "2025-11-06T20:05:00Z",
       "last_mentioned": "2025-11-07T02:00:00Z",
-      "mention_count": 6
+      "mention_count": 6,
+      "birthdate": "2004-09-22",
+      "gender": "male"
     },
     {
       "id": 14,
@@ -132,139 +142,105 @@
       "confidence": 0.95,
       "created_at": "2025-11-06T20:05:00Z",
       "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 9
+      "mention_count": 9,
+      "birthdate": "2007-07-27",
+      "gender": "female"
     },
     {
       "id": 15,
-      "entity_type": "fact",
-      "name": "Daughters have children",
-      "value": "Both daughters have children",
-      "description": "Lori Hutchins has Kaleb and Jillian; Kelli Jones has Levi and Oliver",
+      "entity_type": "person",
+      "name": "Jerry Bishir",
+      "value": "brother",
+      "description": "Brother of Julie Weaver",
       "confidence": 0.95,
-      "created_at": "2025-11-06T21:45:00Z",
-      "last_mentioned": "2025-11-06T21:45:00Z",
-      "mention_count": 1
+      "created_at": "2025-11-07T13:30:00Z",
+      "last_mentioned": "2025-11-07T13:30:00Z",
+      "mention_count": 1,
+      "birthdate": "1953-04-14",
+      "gender": "male"
     },
     {
       "id": 16,
       "entity_type": "fact",
-      "name": "Levi and Jillian first cousins",
-      "value": "Levi Jones and Jillian Hutchins are first cousins",
-      "description": "Confirmed relationship between grandchildren",
+      "name": "Music Theory Overview",
+      "value": "Overview of music theory concepts including pitch, scales, intervals, chords, harmony, rhythm, form, notation, counterpoint, and modern extensions.",
+      "description": "Provided a concise guide to main concepts of music theory as requested by the user.",
       "confidence": 0.95,
-      "created_at": "2025-11-06T23:15:00Z",
-      "last_mentioned": "2025-11-06T23:15:00Z",
-      "mention_count": 1
+      "created_at": "2025-11-07T14:00:00Z",
+      "last_mentioned": "2025-11-07T14:20:00+00:00",
+      "mention_count": 3,
+      "category": "education",
+      "verified": false,
+      "source": "assistant response"
     },
     {
       "id": 17,
-      "entity_type": "date",
-      "name": "Provided birthdate",
-      "value": "1955-04-19",
-      "description": "",
+      "entity_type": "preference",
+      "name": "UI style preference",
+      "value": "MonsterUI tabs",
+      "description": "User prefers MonsterUI-style tabbed documents for presenting information",
       "confidence": 0.95,
-      "created_at": "2025-11-06T23:55:00Z",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 3
+      "created_at": "2025-11-07T13:55:00Z",
+      "last_mentioned": "2025-11-07T14:45:00+00:00",
+      "mention_count": 3,
+      "category": "ui",
+      "strength": "strong"
     },
     {
       "id": 18,
-      "entity_type": "date",
-      "name": "Kelli Jones birthdate",
-      "value": "1995-08-22",
-      "description": "Birthdate of Kelli Jones",
+      "entity_type": "fact",
+      "name": "Markdown tab support",
+      "value": "Markdown does not have built-in tab syntax; tabs require HTML, extensions, or platform-specific widgets.",
+      "description": "Core Markdown lacks tab UI components; workarounds include raw HTML/CSS, extensions, JavaScript widgets, or third‑party services.",
       "confidence": 0.95,
-      "created_at": "2025-11-06T23:58:00Z",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 4
+      "created_at": "2025-11-07T14:05:00+00:00",
+      "last_mentioned": "2025-11-07T14:05:00+00:00",
+      "mention_count": 1,
+      "category": "technology",
+      "verified": false,
+      "source": "assistant response"
     },
     {
       "id": 19,
-      "entity_type": "date",
-      "name": "Lori Hutchins birthdate",
-      "value": "1979-10-03",
-      "description": "Birthdate of Lori Hutchins",
+      "entity_type": "fact",
+      "name": "Music Theory Tabbed Markdown",
+      "value": "Self‑contained Markdown with HTML/CSS tabs presenting music‑theory concepts (Pitch & Notes, Scales & Modes, Intervals, Chords & Harmony, Progressions & Cadences, Rhythm & Meter, Form, Notation, Counterpoint & Voice Leading, Modern Extensions).",
+      "description": "Markdown document using raw HTML and CSS to create MonsterUI‑style tabbed sections for music theory concepts.",
       "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:45Z",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 2
+      "created_at": "2025-11-07T14:20:00+00:00",
+      "last_mentioned": "2025-11-07T14:20:00+00:00",
+      "mention_count": 1,
+      "category": "education",
+      "verified": false,
+      "source": "assistant response"
     },
     {
       "id": 20,
-      "entity_type": "date",
-      "name": "Levi Jones birthdate",
-      "value": "2019-07-05",
-      "description": "Birthdate of Levi Jones",
+      "entity_type": "fact",
+      "name": "Music Theory Concepts Table",
+      "value": "Table of core music theory concepts with brief descriptions",
+      "description": "Provides a concise table outlining core music theory concepts: Pitch & Notes, Scales & Modes, Intervals, Chords, Harmony, Progressions, Rhythm & Meter, Form, Notation, Counterpoint, Modern Extensions.",
       "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:55+00:00",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 2
+      "created_at": "2025-11-07T14:30:00+00:00",
+      "last_mentioned": "2025-11-07T14:45:00+00:00",
+      "mention_count": 2,
+      "category": "education",
+      "verified": false,
+      "source": "assistant response"
     },
     {
       "id": 21,
-      "entity_type": "date",
-      "name": "Jillian Hutchins birthdate",
-      "value": "2007-07-27",
-      "description": "",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:59+00:00",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 2
-    },
-    {
-      "id": 22,
-      "entity_type": "date",
-      "name": "Marty Hutchins birthdate",
-      "value": "1977-10-22",
-      "description": "",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:59+00:00",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 2
-    },
-    {
-      "id": 23,
-      "entity_type": "date",
-      "name": "Oliver Jones birthdate",
-      "value": "2021-09-04",
-      "description": "Birthdate of Oliver Jones",
-      "confidence": 0.95,
-      "created_at": "2025-11-07T00:00:00+00:00",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 2
-    },
-    {
-      "id": 24,
-      "entity_type": "date",
-      "name": "Kaleb Hutchins birthdate",
-      "value": "2004-09-22",
-      "description": "Birthdate of Kaleb Hutchins",
-      "confidence": 0.95,
-      "created_at": "2025-11-07T00:10:00+00:00",
-      "last_mentioned": "2025-11-07T02:00:00Z",
-      "mention_count": 3
-    },
-    {
-      "id": 25,
-      "entity_type": "date",
-      "name": "Christian Jones birthdate",
-      "value": "1994-12-14",
-      "description": "Birthdate of Christian Jones",
-      "confidence": 0.95,
-      "created_at": "2025-11-07T00:15:00+00:00",
-      "last_mentioned": "2025-11-07T01:00:00Z",
-      "mention_count": 2
-    },
-    {
-      "id": 26,
       "entity_type": "fact",
-      "name": "Oldest grandchild",
-      "value": "Kaleb Hutchins is the oldest grandchild of James Weaver",
-      "description": "User confirmed oldest grandchild",
+      "name": "MonsterUI Approach for Music Theory",
+      "value": "Detailed plan to use MonsterUI components (tabs, accordion, carousel, slider, interactive diagram, matrix grid, flowchart, sortable table, metronome widget, timeline slider, rich text editor, dual‑staff editor, video embed, etc.) to create an interactive learning hub for music theory concepts.",
+      "description": "Assistant's proposed approach to expand the music theory table using the full suite of MonsterUI UI components, mapping each concept to specific components for interactive learning.",
       "confidence": 0.95,
-      "created_at": "2025-11-07T02:00:00Z",
-      "last_mentioned": "2025-11-07T02:00:00Z",
-      "mention_count": 1
+      "created_at": "2025-11-07T14:45:00+00:00",
+      "last_mentioned": "2025-11-07T14:45:00+00:00",
+      "mention_count": 1,
+      "category": "education",
+      "verified": false,
+      "source": "assistant response"
     }
   ],
   "relationships": [
@@ -441,84 +417,39 @@
     },
     {
       "id": 20,
-      "entity1_id": 8,
-      "entity2_id": 18,
-      "relationship_type": "other",
-      "description": "birthdate",
+      "entity1_id": 3,
+      "entity2_id": 15,
+      "relationship_type": "family",
+      "description": "sibling",
       "confidence": 0.95,
-      "created_at": "2025-11-06T23:58:00Z"
+      "created_at": "2025-11-07T13:30:00Z"
     },
     {
       "id": 21,
-      "entity1_id": 1,
+      "entity1_id": 19,
       "entity2_id": 17,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:00+00:00"
+      "relationship_type": "interest",
+      "description": "Fact matches user UI style preference for MonsterUI tabs",
+      "confidence": 0.9,
+      "created_at": "2025-11-07T14:20:00+00:00"
     },
     {
       "id": 22,
-      "entity1_id": 7,
-      "entity2_id": 19,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:45Z"
+      "entity1_id": 21,
+      "entity2_id": 17,
+      "relationship_type": "interest",
+      "description": "Fact aligns with user UI style preference for MonsterUI tabs",
+      "confidence": 0.9,
+      "created_at": "2025-11-07T14:45:00+00:00"
     },
     {
       "id": 23,
-      "entity1_id": 10,
+      "entity1_id": 21,
       "entity2_id": 20,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:55+00:00"
-    },
-    {
-      "id": 24,
-      "entity1_id": 14,
-      "entity2_id": 21,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:59+00:00"
-    },
-    {
-      "id": 25,
-      "entity1_id": 12,
-      "entity2_id": 22,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-06T23:59:59+00:00"
-    },
-    {
-      "id": 26,
-      "entity1_id": 11,
-      "entity2_id": 23,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-07T00:00:00+00:00"
-    },
-    {
-      "id": 27,
-      "entity1_id": 13,
-      "entity2_id": 24,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-07T00:10:00+00:00"
-    },
-    {
-      "id": 28,
-      "entity1_id": 9,
-      "entity2_id": 25,
-      "relationship_type": "other",
-      "description": "birthdate",
-      "confidence": 0.95,
-      "created_at": "2025-11-07T00:15:00+00:00"
+      "relationship_type": "interest",
+      "description": "Fact expands upon the Music Theory Concepts Table",
+      "confidence": 0.9,
+      "created_at": "2025-11-07T14:45:00+00:00"
     }
   ]
 }
