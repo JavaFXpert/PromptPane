@@ -65,6 +65,75 @@ def parse_mui_tags(content: str) -> tuple[list[dict[str, Any]], str]:
     return parser.mui_tags, content
 
 # ============================================================================
+# Concept Link Extraction & Restoration
+# ============================================================================
+
+def extract_concept_tags(content: str) -> tuple[str, list[str]]:
+    """
+    Extract <concept>term</concept> tags and replace with placeholders.
+
+    This must be done BEFORE markdown rendering to preserve the tags.
+    Similar pattern to LaTeX extraction in utils.py.
+
+    Args:
+        content: Markdown content with concept tags
+
+    Returns:
+        Tuple of (content with placeholders, list of concept terms)
+    """
+    concepts = []
+
+    def replace_concept(match):
+        term = match.group(1)
+        concepts.append(term)
+        idx = len(concepts) - 1
+        return f'<!--CONCEPT_{idx}-->'
+
+    # Extract <concept>...</concept> tags
+    pattern = r'<concept>(.*?)</concept>'
+    content = re.sub(pattern, replace_concept, content, flags=re.DOTALL)
+
+    return content, concepts
+
+
+def restore_concepts(content: str, concepts: list[str], session_id: str) -> str:
+    """
+    Replace concept placeholders with clickable span elements.
+
+    This must be done AFTER markdown rendering to insert HTML.
+
+    Args:
+        content: Rendered HTML content with placeholders
+        concepts: List of concept terms
+        session_id: Current session ID for HTMX target
+
+    Returns:
+        HTML content with interactive concept spans
+    """
+    for i, term in enumerate(concepts):
+        placeholder = f'<!--CONCEPT_{i}-->'
+
+        # Generate unique ID for optimistic UI
+        timestamp = str(int(time.time() * 1000))
+
+        # Create clickable span with HTMX and optimistic UI
+        onclick_js = get_optimistic_ui_onclick(f"'{term}'")
+        after_swap_js = get_optimistic_ui_after_swap()
+
+        span = f'''<span class="concept-link"
+                         data-concept="{term}"
+                         hx-post="/explain-concept/{session_id}"
+                         hx-vals='{{"concept": "{term}"}}'
+                         hx-target="#scroll-anchor"
+                         hx-swap="beforebegin"
+                         onclick="{onclick_js}"
+                         hx-on--after-swap="{after_swap_js}">{term}</span>'''
+
+        content = content.replace(placeholder, span)
+
+    return content
+
+# ============================================================================
 # Optimistic UI JavaScript Helpers - DRY principle for interactive components
 # ============================================================================
 

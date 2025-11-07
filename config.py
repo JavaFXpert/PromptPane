@@ -153,8 +153,21 @@ CITATION_CSS: str = """
         color: #1d4ed8;
         text-decoration: underline;
     }
+    .concept-link {
+        color: #8b5cf6;
+        text-decoration: underline dotted;
+        cursor: help;
+        padding: 0 2px;
+        transition: all 0.2s;
+        border-radius: 3px;
+    }
+    .concept-link:hover {
+        color: #6d28d9;
+        background-color: rgba(139, 92, 246, 0.1);
+        text-decoration: underline;
+    }
 """
-"""CSS styling for citation links"""
+"""CSS styling for citation links and concept links"""
 
 # ============================================================================
 # Input Validation & Security

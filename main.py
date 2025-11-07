@@ -552,6 +552,99 @@ async def post(session_id: str, message: str):
         session_id
     )
 
+
+@rt("/explain-concept/{session_id}")
+async def post(session_id: str, concept: str):
+    """
+    Handle concept explanation requests from clickable concept links.
+
+    When a user clicks a <concept> link in the chat, this endpoint:
+    1. Adds a user message: "🔍 Explain: {concept}"
+    2. Sends the concept to the LLM with instructions to explain briefly
+    3. Returns the explanation as an assistant message
+
+    Args:
+        session_id: Current session identifier
+        concept: The concept term to explain
+
+    Returns:
+        ChatMessage component with the explanation
+    """
+    # Validate inputs
+    session_id, concept = validate_chat_request(session_id, concept)
+
+    # Create user message for the concept query
+    user_message = f"🔍 Explain: {concept}"
+    db.add_message(session_id, "user", user_message)
+
+    # Get conversation history
+    conversation = db.get_conversation(session_id)
+
+    # Build context from knowledge graph
+    kg_context = build_context_from_kg()
+
+    # Build system prompt with special instruction for concept explanations
+    system_prompt_with_instruction = f"""{SYSTEM_PROMPT}
+
+When explaining concepts:
+- Provide a brief, beginner-friendly explanation (2-4 sentences)
+- You may mark related technical terms with <concept>term</concept> tags for further exploration
+- Keep it concise but clear
+- Use examples if helpful
+
+{kg_context}"""
+
+    # Build messages for API
+    messages_for_api = [
+        {"role": "system", "content": system_prompt_with_instruction}
+    ]
+
+    # Add conversation history
+    for msg in conversation:
+        messages_for_api.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+
+    # Call Groq API
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=messages_for_api,
+            model=config.GROQ_MODEL,
+            temperature=0.5,  # Lower temperature for factual explanations
+            max_tokens=500    # Limit length for brief explanations
+        )
+
+        explanation = chat_completion.choices[0].message.content
+
+        # Check if explanation was successful
+        if not explanation or explanation.strip() == "":
+            explanation = f"I apologize, but I don't have enough information to explain '{concept}' clearly. Could you provide more context?"
+
+    except Exception as e:
+        logger.error(f"Error getting concept explanation: {e}")
+        explanation = f"I encountered an error while trying to explain '{concept}'. Please try again."
+
+    # Add assistant's explanation to conversation
+    db.add_message(session_id, "assistant", explanation)
+
+    # Update knowledge graph with this interaction
+    try:
+        update_knowledge_graph_with_llm(user_message, explanation, client)
+    except Exception as e:
+        logger.error(f"Failed to update knowledge graph: {e}")
+
+    # Get the updated conversation and return the assistant's message
+    conversation = db.get_conversation(session_id)
+    assistant_msg = conversation[-1]
+
+    return ChatMessage(
+        assistant_msg["role"],
+        assistant_msg["content"],
+        assistant_msg.get("timestamp"),
+        session_id
+    )
+
 # ============================================================================
 # Session Management Routes
 # ============================================================================

@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Optional, Callable, Any
 
 # Import MUI components and processing
-from mui_components import process_mui_tags
+from mui_components import process_mui_tags, extract_concept_tags, restore_concepts
 
 # Import utility functions
 from utils import (
@@ -69,14 +69,20 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         # Process MUI tags first
         mui_components, cleaned_content = process_mui_tags(content, session_id)
 
-        # Extract LaTeX blocks before markdown processing
-        latex_extracted, latex_blocks = extract_latex(cleaned_content)
+        # Extract concept tags before markdown processing
+        concept_extracted, concept_terms = extract_concept_tags(cleaned_content)
 
-        # Render markdown with MonsterUI styling (LaTeX is now safe)
+        # Extract LaTeX blocks before markdown processing
+        latex_extracted, latex_blocks = extract_latex(concept_extracted)
+
+        # Render markdown with MonsterUI styling (LaTeX and concepts are now safe)
         rendered_md = render_md(latex_extracted)
 
         # Restore LaTeX blocks after markdown
         rendered_md = restore_latex(rendered_md, latex_blocks)
+
+        # Restore concept links after markdown
+        rendered_md = restore_concepts(rendered_md, concept_terms, session_id)
 
         # Split rendered markdown by HTML comment placeholders and interleave with components
         content_parts = []

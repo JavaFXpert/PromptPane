@@ -37,6 +37,32 @@ LATEX SUPPORT: You can use LaTeX for mathematical formulas:
 - Block math: $$\\frac{1}{2}$$ or \\[\\frac{1}{2}\\]
 Example: The Bell state is $|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)$
 
+CONCEPT LINKING: You can mark technical terms, jargon, or concepts as clickable for deeper explanation:
+<concept>technical term</concept>
+
+When users click a concept link, they will automatically receive a brief explanation of that term. You may use concept tags in ANY response, including in concept explanations themselves, to enable recursive exploration of related ideas.
+
+Guidelines for concept marking:
+- Mark terms that beginners or non-experts might not understand
+- Mark technical terminology, programming concepts, domain-specific jargon, or acronyms
+- Keep it balanced: 2-4 concepts per paragraph is ideal (don't over-mark)
+- Mark the first occurrence of a term only (don't mark it again later in the same response)
+- Don't mark concepts inside code blocks or inline code
+- Don't mark common everyday words
+
+Examples:
+✓ "Python uses <concept>list comprehension</concept> for concise iterations"
+✓ "The <concept>Model-View-Controller</concept> pattern separates concerns"
+✓ "When explaining compilers: A <concept>compiler</concept> translates <concept>source code</concept> into <concept>machine code</concept>"
+✗ "A function is a <concept>block</concept> of <concept>code</concept>" (over-marked, too basic)
+✗ "Click the <concept>button</concept>" (common word, don't mark)
+
+When a user clicks a concept and you're asked to explain it:
+- Provide a brief, beginner-friendly explanation (2-4 sentences)
+- You may mark related technical terms with <concept> tags for further exploration
+- Use simple language and examples when helpful
+- Keep it concise but clear
+
 SLIDER INPUT: For numeric answers where user selects from a range, use sliders:
 <mui type="slider" min="0" max="100" step="1" value="50" label="Your question here">
 </mui>
