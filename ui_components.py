@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Optional, Callable, Any
 
 # Import MUI components and processing
-from mui_components import process_mui_tags, extract_concept_tags, restore_concepts
+from mui_components import process_mui_tags, extract_concept_tags
 
 # Import utility functions
 from utils import (
@@ -69,8 +69,8 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         # Process MUI tags first
         mui_components, cleaned_content = process_mui_tags(content, session_id)
 
-        # Extract concept tags before markdown processing
-        concept_extracted, concept_terms = extract_concept_tags(cleaned_content)
+        # Extract concept tags before markdown processing (returns FastHTML Span elements)
+        concept_extracted, concept_components = extract_concept_tags(cleaned_content, session_id)
 
         # Extract LaTeX blocks before markdown processing
         latex_extracted, latex_blocks = extract_latex(concept_extracted)
@@ -81,15 +81,20 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         # Restore LaTeX blocks after markdown
         rendered_md = restore_latex(rendered_md, latex_blocks)
 
-        # Restore concept links after markdown
-        rendered_md = restore_concepts(rendered_md, concept_terms, session_id)
-
-        # Split rendered markdown by HTML comment placeholders and interleave with components
+        # Split rendered markdown by HTML comment placeholders and interleave with ALL components
+        # (both MUI components and concept components)
         content_parts = []
         remaining = rendered_md
 
+        # Combine all components with their placeholders
+        all_components = []
         for i, component in enumerate(mui_components):
-            placeholder = f"<!--MUI_COMPONENT_{i}-->"
+            all_components.append((f"<!--MUI_COMPONENT_{i}-->", component))
+        for i, component in enumerate(concept_components):
+            all_components.append((f"<!--CONCEPT_{i}-->", component))
+
+        # Process all placeholders in order they appear in the content
+        for placeholder, component in all_components:
             if placeholder in remaining:
                 before, remaining = remaining.split(placeholder, 1)
                 if before.strip():
@@ -100,7 +105,7 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         if remaining.strip():
             content_parts.append(Safe(remaining))
 
-        # If no MUI components, just show rendered markdown
+        # If no components, just show rendered markdown
         if not content_parts:
             content_parts = [Safe(rendered_md)]
 

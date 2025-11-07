@@ -68,73 +68,52 @@ def parse_mui_tags(content: str) -> tuple[list[dict[str, Any]], str]:
 # Concept Link Extraction & Restoration
 # ============================================================================
 
-def extract_concept_tags(content: str) -> tuple[str, list[str]]:
+def extract_concept_tags(content: str, session_id: str) -> tuple[str, list[Any]]:
     """
     Extract <concept>term</concept> tags and replace with placeholders.
+    Returns FastHTML Span components instead of HTML strings.
 
     This must be done BEFORE markdown rendering to preserve the tags.
-    Similar pattern to LaTeX extraction in utils.py.
+    Similar pattern to MUI component extraction.
 
     Args:
         content: Markdown content with concept tags
+        session_id: Current session ID for HTMX target
 
     Returns:
-        Tuple of (content with placeholders, list of concept terms)
+        Tuple of (content with placeholders, list of FastHTML Span elements)
     """
-    concepts = []
+    from fasthtml.common import Span
+
+    concept_components = []
 
     def replace_concept(match):
-        term = match.group(1)
-        concepts.append(term)
-        idx = len(concepts) - 1
+        term = match.group(1).strip()
+        idx = len(concept_components)
+
+        # Create FastHTML Span element (like MUI buttons do)
+        # This ensures proper JavaScript attribute handling by FastHTML
+        concept_span = Span(
+            term,
+            cls="concept-link",
+            data_value=term,
+            data_concept=term,
+            hx_post=f"/explain-concept/{session_id}",
+            hx_vals=f'{{"concept": "{term}"}}',
+            hx_target="#scroll-anchor",
+            hx_swap="beforebegin",
+            hx_on__after_swap=get_optimistic_ui_after_swap(),
+            onclick=get_optimistic_ui_onclick('this.dataset.value')
+        )
+
+        concept_components.append(concept_span)
         return f'<!--CONCEPT_{idx}-->'
 
     # Extract <concept>...</concept> tags
     pattern = r'<concept>(.*?)</concept>'
     content = re.sub(pattern, replace_concept, content, flags=re.DOTALL)
 
-    return content, concepts
-
-
-def restore_concepts(content: str, concepts: list[str], session_id: str) -> str:
-    """
-    Replace concept placeholders with clickable span elements.
-
-    This must be done AFTER markdown rendering to insert HTML.
-
-    Args:
-        content: Rendered HTML content with placeholders
-        concepts: List of concept terms
-        session_id: Current session ID for HTMX target
-
-    Returns:
-        HTML content with interactive concept spans
-    """
-    for i, term in enumerate(concepts):
-        placeholder = f'<!--CONCEPT_{i}-->'
-
-        # Escape HTML entities in term for safe insertion
-        import html
-        term_escaped = html.escape(term)
-
-        # Use data-value pattern (safer than inline JavaScript strings)
-        # This prevents XSS and escaping issues
-        onclick_js = get_optimistic_ui_onclick('this.dataset.value')
-        after_swap_js = get_optimistic_ui_after_swap()
-
-        span = f'''<span class="concept-link"
-                         data-value="{term_escaped}"
-                         data-concept="{term_escaped}"
-                         hx-post="/explain-concept/{session_id}"
-                         hx-vals='{{"concept": "{term_escaped}"}}'
-                         hx-target="#scroll-anchor"
-                         hx-swap="beforebegin"
-                         onclick="{onclick_js}"
-                         hx-on--after-swap="{after_swap_js}">{term_escaped}</span>'''
-
-        content = content.replace(placeholder, span)
-
-    return content
+    return content, concept_components
 
 # ============================================================================
 # Optimistic UI JavaScript Helpers - DRY principle for interactive components
