@@ -186,11 +186,12 @@ def ChatInterface(session_id: str, conversation: list[dict[str, Any]], get_conve
                 autofocus=True
             ),
             Button(
-                UkIcon("video", cls="mr-2"),
-                "Video",
+                UkIcon("video"),
                 cls=ButtonT.secondary,
                 type="button",
                 id="video-btn",
+                title="Request a video on this topic",
+                aria_label="Request video",
                 hx_post=f"/request-video/{session_id}",
                 hx_target="#scroll-anchor",
                 hx_swap="beforebegin",
@@ -239,11 +240,12 @@ def ChatInterface(session_id: str, conversation: list[dict[str, Any]], get_conve
                 """
             ),
             Button(
-                UkIcon("send", cls="mr-2"),
-                "Send",
+                UkIcon("send"),
                 cls=ButtonT.primary,
                 type="submit",
-                id="send-btn"
+                id="send-btn",
+                title="Send message",
+                aria_label="Send message"
             ),
             cls="gap-2 w-full"
         ),
