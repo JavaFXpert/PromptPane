@@ -183,8 +183,60 @@ def ChatInterface(session_id: str, conversation: list[dict[str, Any]], get_conve
                 name="message",
                 placeholder="Type your message here...",
                 cls="flex-1",
-                autofocus=True,
-                required=True
+                autofocus=True
+            ),
+            Button(
+                UkIcon("video", cls="mr-2"),
+                "Video",
+                cls=ButtonT.secondary,
+                type="button",
+                id="video-btn",
+                hx_post=f"/request-video/{session_id}",
+                hx_target="#scroll-anchor",
+                hx_swap="beforebegin",
+                hx_vals="js:{subject: document.getElementById('message-input').value}",
+                onclick="""
+                    const subject = document.getElementById('message-input').value.trim();
+                    const userMessage = subject || '🎥 Show me a video on the current topic';
+
+                    // Show user message immediately
+                    const now = new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
+                    const userMsg = `
+                        <div class="mb-4">
+                            <div class="flex gap-3 justify-end">
+                                <div class="space-y-1">
+                                    <div class="rounded-lg p-4 max-w-2xl bg-primary text-primary-foreground">${userMessage}</div>
+                                    <small class="text-muted-foreground mt-1">${now}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', userMsg);
+
+                    // Show loading indicator
+                    const loadingMsg = `
+                        <div class="mb-4" id="loading-indicator">
+                            <div class="flex gap-3 justify-start">
+                                <div class="space-y-1">
+                                    <div class="rounded-lg p-4 max-w-2xl bg-muted">
+                                        <div class="flex items-center gap-2">
+                                            <span>Finding video...</span>
+                                            <span class="loading loading-dots loading-sm"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('scroll-anchor').insertAdjacentHTML('beforebegin', loadingMsg);
+
+                    // Clear input and scroll
+                    setTimeout(() => {
+                        document.getElementById('message-input').value = '';
+                        const anchor = document.getElementById('scroll-anchor');
+                        if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 100);
+                """
             ),
             Button(
                 UkIcon("send", cls="mr-2"),

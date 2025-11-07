@@ -651,6 +651,139 @@ IMPORTANT - For this concept explanation:
         session_id
     )
 
+
+@rt("/request-video/{session_id}")
+async def post(session_id: str, subject: str = ""):
+    """
+    Handle video request button clicks.
+
+    When a user clicks the Video button:
+    1. If subject is provided, use that as the video topic
+    2. If subject is empty, analyze recent conversation to determine the topic
+    3. Ask the LLM to find a highly rated, short YouTube video on that topic
+
+    Args:
+        session_id: Current session identifier
+        subject: Optional subject for the video (from message input)
+
+    Returns:
+        ChatMessage component with the video
+    """
+    # Validate inputs
+    session_id = validate_session_id(session_id)
+
+    # Get conversation history
+    conversation = db.get_conversation(session_id)
+
+    # Determine the video subject
+    if subject and subject.strip():
+        # User provided a specific subject
+        user_message = f"🎥 Show me a video about: {subject.strip()}"
+        video_topic = subject.strip()
+    else:
+        # Use conversation context to determine subject
+        user_message = "🎥 Show me a video on the current topic"
+
+        # Analyze recent messages to extract the topic
+        recent_messages = conversation[-5:] if len(conversation) >= 5 else conversation
+        context = "\n".join([f"{msg['role']}: {msg['content'][:200]}" for msg in recent_messages])
+
+        # Ask LLM to identify the topic
+        try:
+            topic_response = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": f"""Based on this recent conversation, identify the main topic or subject being discussed in 2-5 words.
+
+Recent conversation:
+{context}
+
+Respond with ONLY the topic/subject (e.g., "derivatives in calculus", "Python programming", "Italian cuisine").
+No explanations, just the topic."""}
+                ],
+                model=config.GROQ_MODEL,
+                temperature=0.3,
+                max_tokens=50
+            )
+
+            video_topic = topic_response.choices[0].message.content.strip()
+            logger.info(f"Identified video topic from context: {video_topic}")
+
+        except Exception as e:
+            logger.error(f"Error identifying topic: {e}")
+            video_topic = "the current subject"
+
+    # Add user message to conversation
+    db.add_message(session_id, "user", user_message)
+
+    # Build context from knowledge graph
+    kg_context = build_context_from_kg()
+
+    # Build system prompt for video request
+    system_prompt_with_instruction = f"""{SYSTEM_PROMPT}
+
+IMPORTANT - Video Request:
+The user wants a highly rated, SHORT YouTube video (5-15 minutes max) about: {video_topic}
+
+Your task:
+1. Find a well-rated, concise video that explains this topic clearly
+2. Use the <mui type="video" url="..." caption="..."> tag to embed the video
+3. Provide a brief 1-2 sentence introduction before the video
+4. After the video, optionally suggest 1-2 related concepts they might want to explore
+
+{kg_context}"""
+
+    # Build messages for API
+    messages_for_api = [
+        {"role": "system", "content": system_prompt_with_instruction}
+    ]
+
+    # Add recent conversation history for context (last 5 messages)
+    recent_conv = conversation[-5:] if len(conversation) >= 5 else conversation
+    for msg in recent_conv:
+        messages_for_api.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+
+    # Call Groq API
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=messages_for_api,
+            model=config.GROQ_MODEL,
+            temperature=0.7,
+            max_tokens=1000
+        )
+
+        video_response = chat_completion.choices[0].message.content
+
+        # Check if response was successful
+        if not video_response or video_response.strip() == "":
+            video_response = f"I apologize, but I couldn't find a suitable video about '{video_topic}'. Please try searching directly on YouTube."
+
+    except Exception as e:
+        logger.error(f"Error getting video recommendation: {e}")
+        video_response = f"I encountered an error while searching for a video about '{video_topic}'. Please try again."
+
+    # Add assistant's response to conversation
+    db.add_message(session_id, "assistant", video_response)
+
+    # Update knowledge graph if needed
+    try:
+        update_knowledge_graph_with_llm(user_message, video_response, client)
+    except Exception as e:
+        logger.error(f"Failed to update knowledge graph: {e}")
+
+    # Get the updated conversation and return the assistant's message
+    conversation = db.get_conversation(session_id)
+    assistant_msg = conversation[-1]
+
+    return ChatMessage(
+        assistant_msg["role"],
+        assistant_msg["content"],
+        assistant_msg.get("timestamp"),
+        session_id
+    )
+
 # ============================================================================
 # Session Management Routes
 # ============================================================================
