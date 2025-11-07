@@ -72,6 +72,11 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
         # Extract concept tags before markdown processing (returns FastHTML Span elements)
         concept_extracted, concept_components = extract_concept_tags(cleaned_content, session_id)
 
+        # DEBUG: Log concept extraction
+        if concept_components:
+            print(f"[DEBUG] Extracted {len(concept_components)} concept components")
+            print(f"[DEBUG] Concept-extracted content preview: {concept_extracted[:200]}...")
+
         # Extract LaTeX blocks before markdown processing
         latex_extracted, latex_blocks = extract_latex(concept_extracted)
 
@@ -98,8 +103,14 @@ def ChatMessage(role: str, content: str, timestamp: Optional[datetime | str] = N
             pos = rendered_md.find(placeholder)
             if pos != -1:
                 component_positions.append((pos, placeholder, component))
+            else:
+                print(f"[DEBUG] Placeholder not found in rendered markdown: {placeholder}")
 
         component_positions.sort(key=lambda x: x[0])  # Sort by position
+
+        # DEBUG: Log how many components are being interleaved
+        if component_positions:
+            print(f"[DEBUG] Interleaving {len(component_positions)} components into markdown")
 
         # Process placeholders in order they appear in the text
         remaining = rendered_md
