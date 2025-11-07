@@ -347,16 +347,19 @@ def generate_mui_checkboxes(tag_info, session_id):
         checkbox_id = f"{group_id}-{i}"
         opt_label = opt['label'] or opt['value']
 
-        # Use native LabelCheckboxX for checkbox + label combination
+        # Create explicit checkbox input with DaisyUI styling
         checkbox_items.append(
             Div(
-                LabelCheckboxX(
-                    opt_label,
-                    CheckboxX(
+                Label(
+                    Input(
+                        type="checkbox",
                         id=checkbox_id,
                         value=opt['value'],
-                        name=group_id
-                    )
+                        name=group_id,
+                        cls="checkbox checkbox-primary"
+                    ),
+                    Span(opt_label, cls="ml-2"),
+                    cls="flex items-center cursor-pointer"
                 ),
                 cls="p-2 hover:bg-muted rounded"
             )
