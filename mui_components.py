@@ -113,21 +113,24 @@ def restore_concepts(content: str, concepts: list[str], session_id: str) -> str:
     for i, term in enumerate(concepts):
         placeholder = f'<!--CONCEPT_{i}-->'
 
-        # Generate unique ID for optimistic UI
-        timestamp = str(int(time.time() * 1000))
+        # Escape HTML entities in term for safe insertion
+        import html
+        term_escaped = html.escape(term)
 
-        # Create clickable span with HTMX and optimistic UI
-        onclick_js = get_optimistic_ui_onclick(f"'{term}'")
+        # Use data-value pattern (safer than inline JavaScript strings)
+        # This prevents XSS and escaping issues
+        onclick_js = get_optimistic_ui_onclick('this.dataset.value')
         after_swap_js = get_optimistic_ui_after_swap()
 
         span = f'''<span class="concept-link"
-                         data-concept="{term}"
+                         data-value="{term_escaped}"
+                         data-concept="{term_escaped}"
                          hx-post="/explain-concept/{session_id}"
-                         hx-vals='{{"concept": "{term}"}}'
+                         hx-vals='{{"concept": "{term_escaped}"}}'
                          hx-target="#scroll-anchor"
                          hx-swap="beforebegin"
                          onclick="{onclick_js}"
-                         hx-on--after-swap="{after_swap_js}">{term}</span>'''
+                         hx-on--after-swap="{after_swap_js}">{term_escaped}</span>'''
 
         content = content.replace(placeholder, span)
 
