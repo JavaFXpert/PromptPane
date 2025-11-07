@@ -334,7 +334,7 @@ def generate_mui_slider(tag_info, session_id):
     )
 
 def generate_mui_checkboxes(tag_info, session_id):
-    """Generate MonsterUI checkbox group component"""
+    """Generate MonsterUI checkbox group component using native CheckboxX"""
     options = tag_info['options']
     attrs = tag_info['attrs']
     label = attrs.get('label', '')
@@ -347,17 +347,18 @@ def generate_mui_checkboxes(tag_info, session_id):
         checkbox_id = f"{group_id}-{i}"
         opt_label = opt['label'] or opt['value']
 
+        # Use native LabelCheckboxX for checkbox + label combination
         checkbox_items.append(
             Div(
-                Input(
-                    type="checkbox",
-                    id=checkbox_id,
-                    value=opt['value'],
-                    name=group_id,
-                    cls="checkbox checkbox-primary w-5 h-5 cursor-pointer"
+                LabelCheckboxX(
+                    opt_label,
+                    CheckboxX(
+                        id=checkbox_id,
+                        value=opt['value'],
+                        name=group_id
+                    )
                 ),
-                Label(opt_label, **{"for": checkbox_id}, cls="cursor-pointer ml-2"),
-                cls="flex items-center gap-2 p-2 hover:bg-muted rounded"
+                cls="p-2 hover:bg-muted rounded"
             )
         )
 
@@ -456,7 +457,7 @@ def generate_mui_rating(tag_info, session_id):
     )
 
 def generate_mui_toggle(tag_info, session_id):
-    """Generate MonsterUI toggle switch component"""
+    """Generate MonsterUI toggle switch component using native Switch"""
     attrs = tag_info['attrs']
     label = attrs.get('label', '')
     default_checked = attrs.get('checked', 'false').lower() == 'true'
@@ -465,18 +466,16 @@ def generate_mui_toggle(tag_info, session_id):
     toggle_id = f"toggle-{int(time.time() * 1000000)}"
 
     return Div(
-        # Label
-        Label(label, cls="font-semibold mb-2") if label else None,
-
-        # Toggle switch
-        Label(
-            Input(
-                type="checkbox",
+        # Use native LabelSwitch for label + switch combination
+        LabelSwitch(
+            label,
+            Switch(
                 id=toggle_id,
-                cls="toggle toggle-primary",
                 checked=default_checked
-            ),
-            cls="cursor-pointer mb-3 flex items-center"
+            )
+        ) if label else Switch(
+            id=toggle_id,
+            checked=default_checked
         ),
 
         # Submit button
@@ -631,10 +630,17 @@ def generate_mui_date(tag_info, session_id):
     )
 
 def generate_mui_grid(tag_info, session_id):
-    """Generate MonsterUI grid layout component"""
+    """Generate MonsterUI grid layout component using native Grid"""
     attrs = tag_info['attrs']
-    cols = attrs.get('cols', '2')
+    cols = int(attrs.get('cols', '2'))
     gap = attrs.get('gap', '4')
+
+    # Support responsive columns
+    cols_sm = int(attrs.get('cols_sm')) if attrs.get('cols_sm') else None
+    cols_md = int(attrs.get('cols_md')) if attrs.get('cols_md') else None
+    cols_lg = int(attrs.get('cols_lg')) if attrs.get('cols_lg') else None
+    cols_xl = int(attrs.get('cols_xl')) if attrs.get('cols_xl') else None
+
     content = tag_info['content'].strip()
 
     if not content:
@@ -687,10 +693,19 @@ def generate_mui_grid(tag_info, session_id):
 
         grid_items.append(Div(*row_parts, cls="p-4 border border-border rounded-lg"))
 
-    # DaisyUI grid classes
-    grid_cls = f"grid grid-cols-{cols} gap-{gap} my-4"
-
-    return Div(*grid_items, cls=grid_cls)
+    # Use native MonsterUI Grid component with responsive columns
+    return Div(
+        Grid(
+            *grid_items,
+            cols=cols,
+            cols_sm=cols_sm,
+            cols_md=cols_md,
+            cols_lg=cols_lg,
+            cols_xl=cols_xl,
+            cls=f"gap-{gap}"
+        ),
+        cls="my-4"
+    )
 
 def generate_mui_stat(tag_info, session_id):
     """Generate MonsterUI stat/metric display component"""
@@ -772,10 +787,14 @@ def generate_mui_table(tag_info, session_id):
 
         table_rows.append(Tr(*processed_cells))
 
-    return Table(
-        Thead(Tr(*[Th(h) for h in headers])),
-        Tbody(*table_rows),
-        cls="table table-zebra my-4"
+    # Use MonsterUI TableT styling instead of DaisyUI classes
+    return Div(
+        Table(
+            Thead(Tr(*[Th(h) for h in headers])),
+            Tbody(*table_rows),
+            cls=(TableT.striped, TableT.hover, TableT.divider)
+        ),
+        cls="my-4"
     )
 
 def generate_mui_tabs(tag_info, session_id):
@@ -900,6 +919,93 @@ def generate_mui_tabs(tag_info, session_id):
         cls="my-4 p-2 border border-border rounded-lg"
     )
 
+def generate_mui_accordion(tag_info, session_id):
+    """Generate MonsterUI accordion component using Accordion and AccordionItem"""
+    content = tag_info['content'].strip()
+
+    # Debug logging
+    print(f"[DEBUG] Accordion content received: {content[:500]}...")
+
+    # Parse accordion items from content - handle both straight and curly quotes
+    # Pattern matches: title="..." or title="..."
+    item_pattern = r'<item\s+title=["\u201c\u201d\'](.*?)["\u201c\u201d\']>(.*?)</item>'
+    items = re.findall(item_pattern, content, re.DOTALL)
+
+    print(f"[DEBUG] Found {len(items)} accordion items")
+    for i, (title, _) in enumerate(items):
+        print(f"[DEBUG] Item {i}: {title}")
+
+    if not items:
+        error_msg = f"Error: Accordion must contain <item title=\"...\">content</item> items. Received content: {content[:100]}"
+        print(f"[ERROR] {error_msg}")
+        return Div(
+            P("Accordion parsing failed!", cls="text-error font-bold"),
+            P(f"Expected format: <item title=\"Title\">Content</item>", cls="text-sm"),
+            P(f"Received: {content[:200]}...", cls="text-sm text-muted-foreground"),
+            cls="p-4 border border-error rounded-lg my-4"
+        )
+
+    # Build accordion items using MonsterUI's AccordionItem
+    accordion_items = []
+
+    for i, (title, item_content) in enumerate(items):
+        is_first = (i == 0)
+
+        # Extract concept tags from item content
+        content_text = item_content.strip()
+        concept_extracted, concept_components = extract_concept_tags(content_text, session_id)
+
+        # Check if content has markdown indicators
+        has_markdown = any(indicator in concept_extracted for indicator in ['**', '*', '#', '`', '[', '-', '1.'])
+
+        if has_markdown:
+            # Render as markdown
+            rendered_md = render_md(concept_extracted)
+        else:
+            # Plain text
+            rendered_md = concept_extracted
+
+        # Replace concept placeholders with actual components
+        content_parts = []
+        remaining = rendered_md
+        for idx, component in enumerate(concept_components):
+            placeholder = f'<!--CONCEPT_{idx}-->'
+            if placeholder in remaining:
+                before, remaining = remaining.split(placeholder, 1)
+                if before.strip():
+                    content_parts.append(Safe(before))
+                content_parts.append(component)
+
+        # Add any remaining content
+        if remaining.strip():
+            content_parts.append(Safe(remaining))
+
+        # If no components, just show rendered content
+        if not content_parts:
+            content_parts = [Safe(rendered_md)]
+
+        # Create AccordionItem with processed content
+        accordion_items.append(
+            AccordionItem(
+                title,
+                *content_parts,
+                open=is_first  # First item expanded by default
+            )
+        )
+
+    print(f"[DEBUG] Generated {len(accordion_items)} accordion items")
+
+    # Return MonsterUI Accordion component with all items
+    return Div(
+        Accordion(
+            *accordion_items,
+            multiple=True,  # Allow multiple items to be open at once
+            animation=True,  # Enable smooth animations
+            duration=200  # Animation duration in ms
+        ),
+        cls="my-4"
+    )
+
 def generate_mui_component(tag_info, session_id):
     """Generate MonsterUI component from parsed tag"""
     component_type = tag_info['type']
@@ -932,6 +1038,8 @@ def generate_mui_component(tag_info, session_id):
         return generate_mui_table(tag_info, session_id)
     elif component_type == 'tabs':
         return generate_mui_tabs(tag_info, session_id)
+    elif component_type == 'accordion':
+        return generate_mui_accordion(tag_info, session_id)
     else:
         # Unknown type, return empty div
         return Div()

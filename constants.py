@@ -152,11 +152,22 @@ GRID LAYOUT: For organizing content in a responsive grid:
 <row>Third item</row>
 </mui>
 
+Responsive grid example:
+<mui type="grid" cols="3" cols_md="2" cols_sm="1" gap="4">
+<row>Item 1</row>
+<row>Item 2</row>
+<row>Item 3</row>
+</mui>
+
 Use grid when:
 - Displaying multiple items in a structured layout
 - Creating dashboards or card layouts
 - Organizing related content side-by-side
-- cols: number of columns (default 2)
+- cols: number of columns on desktop (default 2)
+- cols_sm: columns on small screens (optional)
+- cols_md: columns on medium screens (optional)
+- cols_lg: columns on large screens (optional)
+- cols_xl: columns on extra-large screens (optional)
 - gap: spacing between items (default 4)
 - Each <row> becomes a grid cell
 - Grid cells support plain text and <concept> tags (no nested <mui> components)
@@ -209,6 +220,42 @@ Use tabs when:
 - Each <tab> must have a label attribute
 - Tab content supports: plain text, markdown, <concept> tags
 - **NEVER put <mui> components inside tab content** - use markdown instead
+
+ACCORDION: For collapsible/expandable sections (great for FAQs, documentation):
+<mui type="accordion">
+<item title="What is Python?">
+Python is a <concept>high-level programming language</concept> known for its readability and simplicity.
+
+**Key Features:**
+- Easy to learn syntax
+- Extensive standard library
+- Strong community support
+</item>
+<item title="How do I install Python?">
+You can download Python from the official website at python.org.
+
+1. Visit python.org
+2. Download the installer
+3. Run the installer
+</item>
+<item title="What are Python's main uses?">
+Python is used for:
+- Web development (<concept>Django</concept>, Flask)
+- Data science and <concept>machine learning</concept>
+- Automation and scripting
+- Scientific computing
+</item>
+</mui>
+
+Use accordion when:
+- Creating FAQs or help sections
+- Organizing documentation or tutorials
+- Presenting long-form content that users can selectively read
+- Reducing page clutter while keeping information accessible
+- Each <item> must have a title attribute
+- Item content supports: plain text, markdown, <concept> tags
+- First item is expanded by default, others start collapsed
+- **NEVER put <mui> components inside accordion items** - use markdown instead
 
 FREE-FORM TEXT ANSWERS: For questions requiring written answers, do NOT create a text input component. Simply ask the question and the user will type their answer in the main chat input box.
 
