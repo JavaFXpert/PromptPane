@@ -997,25 +997,48 @@ async def post(session_id: str, subject: str = ""):
         # Use conversation context to determine subject
         user_message = "🎥 Show me a video on the current topic"
 
-        # Analyze recent messages to extract the topic
-        recent_messages = conversation[-5:] if len(conversation) >= 5 else conversation
-        context = "\n".join([f"{msg['role']}: {msg['content'][:200]}" for msg in recent_messages])
+        # Get more context - last 10 messages with full content
+        recent_messages = conversation[-10:] if len(conversation) >= 10 else conversation
+        context = "\n".join([f"{msg['role']}: {msg['content'][:500]}" for msg in recent_messages])
 
-        # Ask LLM to identify the topic
+        # Get learning objectives context if available
+        objectives_context = ""
+        if config.ENABLE_LEARNING_OBJECTIVES:
+            active_objective = get_active_objective()
+            if active_objective:
+                # Get the most recent objectives being discussed
+                objectives_summary = f"Current learning path: {active_objective['title']}"
+                if active_objective.get('children'):
+                    objectives_summary += f"\nRecent objectives: {', '.join([child['title'] for child in active_objective['children'][:3]])}"
+                objectives_context = f"\n\nLearning Context:\n{objectives_summary}"
+
+        # Ask LLM to identify the specific concept being discussed
         try:
             topic_response = client.chat.completions.create(
                 messages=[
-                    {"role": "system", "content": f"""Based on this recent conversation, identify the main topic or subject being discussed in 2-5 words.
+                    {"role": "system", "content": f"""Based on this recent conversation, identify the SPECIFIC concept, topic, or subject currently being discussed or just explained.
 
 Recent conversation:
-{context}
+{context}{objectives_context}
 
-Respond with ONLY the topic/subject (e.g., "derivatives in calculus", "Python programming", "Italian cuisine").
-No explanations, just the topic."""}
+IMPORTANT:
+- Focus on the MOST RECENT topic or concept mentioned
+- If explaining a technical term, use that term
+- If discussing a specific subtopic, use the subtopic (not the broad category)
+- Be specific and precise (3-8 words)
+- If multiple concepts were discussed, choose the most recent one
+
+Examples of good responses:
+- "derivatives and the chain rule"
+- "Python list comprehensions"
+- "Renaissance art in Florence"
+- "quantum entanglement"
+
+Respond with ONLY the specific concept/topic. No explanations."""}
                 ],
                 model=config.GROQ_MODEL,
-                temperature=0.3,
-                max_tokens=50
+                temperature=0.2,  # Lower temperature for more focused responses
+                max_tokens=100
             )
 
             video_topic = topic_response.choices[0].message.content.strip()
@@ -1031,30 +1054,44 @@ No explanations, just the topic."""}
     # Build context from knowledge graph
     kg_context = build_context_from_kg()
 
+    # Add learning objectives context for better video selection
+    objectives_full_context = ""
+    if config.ENABLE_LEARNING_OBJECTIVES:
+        objectives_full_context = build_objectives_context()
+
     # Build system prompt for video request
     system_prompt_with_instruction = f"""{SYSTEM_PROMPT}
 
+{kg_context}
+
+{objectives_full_context}
+
 CRITICAL - Video Request:
-The user clicked the Video button requesting a YouTube video about: {video_topic}
+The user clicked the Video button requesting a YouTube video about: "{video_topic}"
+
+This is the SPECIFIC CONCEPT they want to learn about right now based on the conversation context.
 
 YOU MUST:
-1. Use browser_search to find a highly rated YouTube video (5-15 minutes) about "{video_topic}"
-2. Search query example: "best short youtube video explaining {video_topic}"
-3. ALWAYS embed the video using: <mui type="video" url="YOUTUBE_URL_HERE" caption="Video title">
-4. Provide a brief 1-2 sentence introduction BEFORE the video tag
-5. Include 2-3 related <concept> links AFTER the video for further exploration
+1. Use browser_search to find a highly rated, educational YouTube video (5-20 minutes) that specifically explains "{video_topic}"
+2. Search query should be specific: "best youtube video explaining {video_topic}" or "{video_topic} tutorial youtube"
+3. Prioritize:
+   - Clear, well-explained videos
+   - Recent videos (2018+) with good production quality
+   - Videos from educational channels when possible
+   - Videos that match the learner's level (beginner/intermediate/advanced based on conversation)
+4. ALWAYS embed the video using: <mui type="video" url="YOUTUBE_URL_HERE" caption="Video title">
+5. Provide a brief 1-2 sentence introduction BEFORE the video explaining why this video is helpful
+6. Include 2-3 related <concept> links AFTER the video for further exploration
 
 REQUIRED FORMAT:
-Here's a great video that explains [topic]:
+Here's an excellent video that explains {video_topic}:
 
 <mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Video Title - Duration">
 </mui>
 
 Related concepts: <concept>term1</concept>, <concept>term2</concept>
 
-DO NOT respond without including a video. The user specifically requested a video.
-
-{kg_context}"""
+DO NOT respond without including a video. The user specifically requested a video about "{video_topic}"."""
 
     # Build messages for API
     messages_for_api = [
