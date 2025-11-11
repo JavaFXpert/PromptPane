@@ -999,7 +999,23 @@ async def post(session_id: str, subject: str = ""):
 
         # Get more context - last 10 messages with full content
         recent_messages = conversation[-10:] if len(conversation) >= 10 else conversation
-        context = "\n".join([f"{msg['role']}: {msg['content'][:500]}" for msg in recent_messages])
+
+        # Filter out short feedback/validation messages (like "✅ Correct!")
+        # Focus on substantive educational content
+        substantive_messages = []
+        for msg in recent_messages:
+            content = msg['content']
+            # Skip very short messages (likely just feedback)
+            if len(content) > 50:
+                # Skip messages that are just validation/feedback
+                if not (content.strip().startswith('✅') or content.strip().startswith('❌')):
+                    substantive_messages.append(msg)
+                elif len(content) > 200:  # Long messages with feedback but also content
+                    substantive_messages.append(msg)
+
+        # Use substantive messages if we found any, otherwise use all
+        messages_for_context = substantive_messages if substantive_messages else recent_messages
+        context = "\n".join([f"{msg['role']}: {msg['content'][:500]}" for msg in messages_for_context])
 
         # Get learning objectives context if available
         objectives_context = ""

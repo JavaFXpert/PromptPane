@@ -838,8 +838,14 @@ def generate_mui_tabs(tag_info, session_id):
     for i, (label, tab_content) in enumerate(tabs):
         is_first = (i == 0)
 
-        # Button for each tab
-        active_cls = "tab-active" if is_first else ""
+        # Button for each tab with enhanced contrast
+        if is_first:
+            # Active tab: bold text, light blue background, rounded corners
+            active_cls = "tab-active font-bold bg-blue-200 text-blue-900 border-b-4 border-blue-400 rounded-t-lg"
+        else:
+            # Inactive tab: lighter styling with rounded corners
+            active_cls = "text-muted-foreground hover:bg-blue-50 rounded-t-lg"
+
         tab_buttons.append(
             Button(
                 label,
@@ -850,12 +856,18 @@ def generate_mui_tabs(tag_info, session_id):
                 data_tab_container=tab_id,
                 onclick=f"""
                     console.log('Tab clicked: {label}', 'index: {i}');
-                    // Remove active class from all tabs in this container
+                    // Update all tabs in this container
                     document.querySelectorAll('[data-tab-container="{tab_id}"]').forEach(tab => {{
-                        tab.classList.remove('tab-active');
+                        // Remove active styles
+                        tab.classList.remove('tab-active', 'font-bold', 'bg-blue-200', 'text-blue-900', 'border-b-4', 'border-blue-400');
+                        // Add inactive styles
+                        tab.classList.add('text-muted-foreground', 'hover:bg-blue-50');
                     }});
-                    // Add active class to clicked tab
-                    this.classList.add('tab-active');
+                    // Remove inactive styles from clicked tab
+                    this.classList.remove('text-muted-foreground', 'hover:bg-blue-50');
+                    // Add active styles to clicked tab
+                    this.classList.add('tab-active', 'font-bold', 'bg-blue-200', 'text-blue-900', 'border-b-4', 'border-blue-400');
+
                     // Hide all tab contents
                     document.querySelectorAll('[id^="{tab_id}-content-"]').forEach(content => {{
                         content.style.display = 'none';
@@ -920,9 +932,15 @@ def generate_mui_tabs(tag_info, session_id):
     print(f"[DEBUG] Generated {len(tab_buttons)} tab buttons and {len(tab_contents)} content panels")
 
     return Div(
-        Div(*tab_buttons, role="tablist", cls="tabs tabs-bordered mb-2"),
+        # Tab buttons container with enhanced background contrast
+        Div(
+            *tab_buttons,
+            role="tablist",
+            cls="tabs tabs-bordered bg-base-200 p-2 rounded-t-lg shadow-sm"
+        ),
+        # Tab contents container
         Div(*tab_contents, cls="tab-content-container"),
-        cls="my-4 p-2 border border-border rounded-lg"
+        cls="my-4 border-2 border-base-300 rounded-lg shadow-md bg-base-100"
     )
 
 def generate_mui_accordion(tag_info, session_id):
