@@ -65,6 +65,31 @@ ENTITY_EXTRACTION_TEMPERATURE: float = 0.3
 """Temperature for entity extraction (lower = more conservative)"""
 
 # ============================================================================
+# Learning Objectives Configuration
+# ============================================================================
+
+ENABLE_LEARNING_OBJECTIVES: bool = True
+"""Enable learning objectives feature"""
+
+OBJECTIVES_FILE_PATH: str = "learning_objectives.json"
+"""Path to learning objectives JSON file"""
+
+MAX_DECOMPOSITION_DEPTH: int = 4
+"""Maximum depth for recursive objective decomposition"""
+
+ENABLE_AUTO_MASTERY_TRACKING: bool = True
+"""Enable automatic mastery level updates via LLM"""
+
+MASTERY_UPDATE_FREQUENCY: str = "per_message"
+"""How often to update mastery: 'per_message' or 'manual'"""
+
+OBJECTIVES_DECOMPOSITION_TEMPERATURE: float = 0.3
+"""Temperature for LLM objective decomposition"""
+
+OBJECTIVES_MASTERY_TEMPERATURE: float = 0.2
+"""Temperature for LLM mastery assessment (lower = more conservative)"""
+
+# ============================================================================
 # Groq API Configuration
 # ============================================================================
 

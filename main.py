@@ -74,6 +74,28 @@ from entity_ui_components import (
     EmptyEntityState
 )
 
+# Import learning objectives manager
+from learning_objectives_manager import (
+    load_learning_objectives,
+    save_learning_objectives,
+    get_active_objective,
+    set_active_objective,
+    clear_active_objective,
+    decompose_objective_with_llm,
+    update_mastery_with_llm,
+    format_objectives_for_prompt,
+    build_objectives_context
+)
+
+# Import learning objectives UI components
+from learning_objectives_ui_components import (
+    ObjectiveSidebar,
+    ObjectiveTreeItem,
+    NoActiveObjectiveState,
+    ReplaceObjectiveConfirmationModal,
+    ObjectiveSummaryCard
+)
+
 # Import validators
 from validators import (
     validate_chat_request,
@@ -142,11 +164,57 @@ def get():
     kg = load_knowledge_graph()
     entities = kg.get("entities", [])
 
-    # Return full page with session sidebar (left), chat (center), entity sidebar (right)
+    # Get active learning objective for objectives sidebar
+    active_objective = get_active_objective()
+
+    # Create tabbed right sidebar combining Knowledge Graph and Learning Path
+    right_sidebar = Div(
+        # Tabs header
+        Div(
+            Button(
+                "Knowledge Graph",
+                cls="tab tab-lifted tab-active",
+                hx_get="/sidebar/knowledge-graph",
+                hx_target="#right-sidebar-content",
+                hx_swap="innerHTML",
+                onclick="switchTab(event, 'knowledge-graph')"
+            ),
+            Button(
+                "Learning Path",
+                cls="tab tab-lifted",
+                hx_get="/sidebar/learning-path",
+                hx_target="#right-sidebar-content",
+                hx_swap="innerHTML",
+                onclick="switchTab(event, 'learning-path')"
+            ),
+            cls="tabs tabs-lifted",
+            role="tablist"
+        ),
+        # Tab content (initially shows Knowledge Graph)
+        Div(
+            EntitySidebar(entities),
+            id="right-sidebar-content",
+            cls="flex-1 overflow-hidden"
+        ),
+        # JavaScript for tab switching
+        Script("""
+function switchTab(event, tabName) {
+    // Remove active class from all tabs
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => tab.classList.remove('tab-active'));
+
+    // Add active class to clicked tab
+    event.target.classList.add('tab-active');
+}
+        """),
+        cls="w-80 bg-base-100 border-l border-base-300 flex flex-col"
+    )
+
+    # Return full page with session sidebar (left), chat (center), tabbed sidebar (right)
     return Title("PromptPane"), Div(
         SessionSidebar(sessions, session_id),
         ChatInterface(session_id, conversation, db.get_conversation),
-        EntitySidebar(entities),
+        right_sidebar,
         cls="flex h-screen"
     )
 
@@ -233,10 +301,121 @@ async def post(session_id: str, message: str):
                 session_id
             )
 
+    # Check for learning intent and create objective if detected
+    if config.ENABLE_LEARNING_OBJECTIVES:
+        learning_phrases = [
+            "i want to learn",
+            "teach me",
+            "help me learn",
+            "help me understand",
+            "i'd like to learn",
+            "i would like to learn",
+            "explain how to",
+            "show me how to"
+        ]
+
+        message_lower = message.lower()
+        is_learning_intent = any(phrase in message_lower for phrase in learning_phrases)
+
+        if is_learning_intent:
+            try:
+                # Extract topic (everything after the learning phrase)
+                topic = message
+                for phrase in learning_phrases:
+                    if phrase in message_lower:
+                        # Find the phrase and extract what comes after
+                        idx = message_lower.index(phrase)
+                        topic = message[idx + len(phrase):].strip()
+                        break
+
+                # Clean up common words at the start
+                topic = topic.lstrip("about how to the ")
+
+                logger.info(f"Learning intent detected for topic: {topic}")
+
+                # Check if there's an existing objective
+                existing_objective = get_active_objective()
+
+                # If there's an existing objective, ask for confirmation
+                if existing_objective:
+                    confirmation_message = f"📚 I can create a learning path for **{topic}**!\n\n"
+                    confirmation_message += f"⚠️ **Note**: You currently have an active learning path:\n"
+                    confirmation_message += f"**\"{existing_objective['title']}\"**\n\n"
+                    confirmation_message += f"Creating a new path will **completely replace** your current one.\n\n"
+                    confirmation_message += "Would you like to proceed?\n\n"
+                    confirmation_message += f'<mui type="buttons">\n'
+                    confirmation_message += f'<option value="CONFIRM_CREATE_OBJECTIVE:{topic}">Yes, replace with new path</option>\n'
+                    confirmation_message += f'<option value="CANCEL_CREATE_OBJECTIVE">No, keep current path</option>\n'
+                    confirmation_message += f'</mui>'
+
+                    db.add_message(session_id, "assistant", confirmation_message)
+                    conversation = db.get_conversation(session_id)
+                    assistant_msg = conversation[-1]
+                    return ChatMessage(
+                        assistant_msg["role"],
+                        assistant_msg["content"],
+                        assistant_msg.get("timestamp"),
+                        session_id
+                    )
+
+                # No existing objective, proceed directly
+                ack_message = f"Excellent! I'll create a structured learning path for **{topic}**.\n\n"
+                ack_message += "Give me a moment to break this down into manageable objectives..."
+
+                # Add acknowledgment message
+                db.add_message(session_id, "assistant", ack_message)
+
+                # Decompose the objective using LLM
+                objective = decompose_objective_with_llm(
+                    title=f"Learn {topic}",
+                    description=f"Master the fundamentals and advanced concepts of {topic}",
+                    client=client,
+                    parent_id=None,
+                    current_depth=0
+                )
+
+                # Set as active objective (archive existing)
+                set_active_objective(objective, archive_existing=True)
+
+                logger.info(f"Created learning objective: {objective['title']}")
+
+                # Add success message with summary
+                success_message = f"✅ **Learning Path Created!**\n\n"
+                success_message += f"I've created a comprehensive learning path for **{topic}** with {len(objective.get('children', []))} main areas.\n\n"
+                success_message += "Check the **Learning Path** tab in the right sidebar to see the full hierarchy. "
+                success_message += "I'll track your progress as we go!\n\n"
+                success_message += f"Let's start with the first topic: **{objective['children'][0]['title']}**" if objective.get('children') else "Let's begin!"
+
+                db.add_message(session_id, "assistant", success_message)
+
+                # Return both messages
+                conversation = db.get_conversation(session_id)
+                # Return the last assistant message (success message)
+                assistant_msg = conversation[-1]
+                return ChatMessage(
+                    assistant_msg["role"],
+                    assistant_msg["content"],
+                    assistant_msg.get("timestamp"),
+                    session_id
+                )
+
+            except Exception as e:
+                logger.error(f"Failed to create learning objective: {e}", exc_info=True)
+                error_msg = f"I detected that you want to learn about **{topic}**, but I encountered an error creating the learning path: {str(e)}\n\nLet's continue with a regular conversation instead."
+                db.add_message(session_id, "assistant", error_msg)
+                conversation = db.get_conversation(session_id)
+                assistant_msg = conversation[-1]
+                return ChatMessage(
+                    assistant_msg["role"],
+                    assistant_msg["content"],
+                    assistant_msg.get("timestamp"),
+                    session_id
+                )
+
     # Get conversation history for context
     conversation = db.get_conversation(session_id)
 
-    # Build system prompt with knowledge graph context
+    # Build system prompt with knowledge graph context and learning objectives
     system_prompt = SYSTEM_PROMPT
     if config.ENABLE_ENTITY_EXTRACTION:
         # Use JSON-based knowledge graph for context
@@ -247,6 +426,12 @@ async def post(session_id: str, message: str):
         )
         if kg_context:
             system_prompt = f"{SYSTEM_PROMPT}\n\n{kg_context}"
+
+    # Add learning objectives context
+    if config.ENABLE_LEARNING_OBJECTIVES:
+        objectives_context = build_objectives_context()
+        if objectives_context:
+            system_prompt = f"{system_prompt}\n\n{objectives_context}"
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -317,6 +502,28 @@ async def post(session_id: str, message: str):
                 except Exception as e:
                     # Don't fail the request if knowledge graph update fails
                     logger.error(f"Knowledge graph update failed: {e}", exc_info=True)
+
+        # Update learning objectives mastery using LLM-based assessment
+        if config.ENABLE_LEARNING_OBJECTIVES and config.ENABLE_AUTO_MASTERY_TRACKING:
+            active_objective = get_active_objective()
+            if active_objective:
+                try:
+                    # Get recent conversation for mastery assessment
+                    recent_conversation = conversation[-6:]  # Last 6 messages
+
+                    # Update mastery levels based on conversation
+                    updates = update_mastery_with_llm(
+                        conversation_context=recent_conversation,
+                        objective_tree=active_objective,
+                        client=client
+                    )
+
+                    if updates:
+                        logger.info(f"Updated {len(updates)} objective mastery levels")
+
+                except Exception as e:
+                    # Don't fail the request if mastery update fails
+                    logger.error(f"Mastery update failed: {e}", exc_info=True)
 
     except Exception as e:
         # Get user-friendly error message
@@ -430,6 +637,84 @@ async def post(session_id: str, message: str):
     db.update_session_access(session_id)
     db.update_session_message_count(session_id)
 
+    # Check for learning objective confirmation buttons
+    if message.startswith("CONFIRM_CREATE_OBJECTIVE:"):
+        topic = message.replace("CONFIRM_CREATE_OBJECTIVE:", "").strip()
+        logger.info(f"User confirmed creation of learning objective for: {topic}")
+
+        try:
+            ack_message = f"Perfect! Creating your learning path for **{topic}**...\n\nThis may take a moment."
+            db.add_message(session_id, "assistant", ack_message)
+
+            # Decompose the objective using LLM
+            objective = decompose_objective_with_llm(
+                title=f"Learn {topic}",
+                description=f"Master the fundamentals and advanced concepts of {topic}",
+                client=client,
+                parent_id=None,
+                current_depth=0
+            )
+
+            # Set as active objective (archive existing)
+            set_active_objective(objective, archive_existing=True)
+
+            logger.info(f"Created learning objective: {objective['title']}")
+
+            # Add success message with sidebar refresh trigger
+            success_message = f"✅ **Learning Path Created!**\n\n"
+            success_message += f"I've created a comprehensive learning path for **{topic}** with {len(objective.get('children', []))} main areas.\n\n"
+            success_message += "👉 Check the **Learning Path** tab in the right sidebar to see the full hierarchy.\n\n"
+            success_message += "I'll track your progress as we go!\n\n"
+            success_message += f"Let's start with: **{objective['children'][0]['title']}**" if objective.get('children') else "Let's begin!"
+
+            db.add_message(session_id, "assistant", success_message)
+
+            # Return success message with script to refresh sidebar
+            conversation = db.get_conversation(session_id)
+            assistant_msg = conversation[-1]
+
+            # Add JavaScript to trigger sidebar refresh
+            refresh_script = Script("""
+                // Trigger learning path sidebar refresh
+                htmx.ajax('GET', '/sidebar/learning-path', {target:'#right-sidebar-content', swap:'innerHTML'});
+            """)
+
+            return Div(
+                ChatMessage(
+                    assistant_msg["role"],
+                    assistant_msg["content"],
+                    assistant_msg.get("timestamp"),
+                    session_id
+                ),
+                refresh_script
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to create learning objective: {e}", exc_info=True)
+            error_msg = f"I encountered an error creating the learning path: {str(e)}\n\nPlease try again."
+            db.add_message(session_id, "assistant", error_msg)
+            conversation = db.get_conversation(session_id)
+            assistant_msg = conversation[-1]
+            return ChatMessage(
+                assistant_msg["role"],
+                assistant_msg["content"],
+                assistant_msg.get("timestamp"),
+                session_id
+            )
+
+    elif message == "CANCEL_CREATE_OBJECTIVE":
+        logger.info("User cancelled creation of learning objective")
+        cancel_message = "No problem! Your current learning path remains active. Let me know if you'd like to work on your current objectives or if you need anything else!"
+        db.add_message(session_id, "assistant", cancel_message)
+        conversation = db.get_conversation(session_id)
+        assistant_msg = conversation[-1]
+        return ChatMessage(
+            assistant_msg["role"],
+            assistant_msg["content"],
+            assistant_msg.get("timestamp"),
+            session_id
+        )
+
     # Check for debug commands
     if is_debug_command(message):
         # Handle /debug-help separately (doesn't raise error)
@@ -448,7 +733,7 @@ async def post(session_id: str, message: str):
     # Get conversation history
     conversation = db.get_conversation(session_id)
 
-    # Build system prompt with knowledge graph context
+    # Build system prompt with knowledge graph context and learning objectives
     system_prompt = SYSTEM_PROMPT
     if config.ENABLE_ENTITY_EXTRACTION:
         # Use JSON-based knowledge graph for context
@@ -459,6 +744,12 @@ async def post(session_id: str, message: str):
         )
         if kg_context:
             system_prompt = f"{SYSTEM_PROMPT}\n\n{kg_context}"
+
+    # Add learning objectives context
+    if config.ENABLE_LEARNING_OBJECTIVES:
+        objectives_context = build_objectives_context()
+        if objectives_context:
+            system_prompt = f"{system_prompt}\n\n{objectives_context}"
 
     messages_for_api = [
         {"role": "system", "content": system_prompt},
@@ -529,6 +820,28 @@ async def post(session_id: str, message: str):
                 except Exception as e:
                     # Don't fail the request if knowledge graph update fails
                     logger.error(f"Knowledge graph update failed: {e}", exc_info=True)
+
+        # Update learning objectives mastery using LLM-based assessment
+        if config.ENABLE_LEARNING_OBJECTIVES and config.ENABLE_AUTO_MASTERY_TRACKING:
+            active_objective = get_active_objective()
+            if active_objective:
+                try:
+                    # Get recent conversation for mastery assessment
+                    recent_conversation = conversation[-6:]  # Last 6 messages
+
+                    # Update mastery levels based on conversation
+                    updates = update_mastery_with_llm(
+                        conversation_context=recent_conversation,
+                        objective_tree=active_objective,
+                        client=client
+                    )
+
+                    if updates:
+                        logger.info(f"Updated {len(updates)} objective mastery levels")
+
+                except Exception as e:
+                    # Don't fail the request if mastery update fails
+                    logger.error(f"Mastery update failed: {e}", exc_info=True)
 
     except Exception as e:
         # Get user-friendly error message
@@ -1193,6 +1506,107 @@ def delete(entity_id: int):
 
     # Return empty div (HTMX will remove the item)
     return Div()
+
+
+# ============================================================================
+# Sidebar Tab Routes
+# ============================================================================
+
+@rt("/sidebar/knowledge-graph")
+def get():
+    """Return Knowledge Graph sidebar content"""
+    kg = load_knowledge_graph()
+    entities = kg.get("entities", [])
+    return EntitySidebar(entities)
+
+
+@rt("/sidebar/learning-path")
+def get():
+    """Return Learning Path sidebar content"""
+    active_objective = get_active_objective()
+    return ObjectiveSidebar(active_objective)
+
+
+# ============================================================================
+# Learning Objectives Routes
+# ============================================================================
+
+@rt("/objective/create-from-chat")
+async def post(topic: str, replace: bool = False):
+    """Create new learning objective from chat message"""
+    try:
+        logger.info(f"Creating learning objective for topic: {topic}")
+
+        # Decompose the objective using LLM
+        objective = decompose_objective_with_llm(
+            title=f"Learn {topic}",
+            description=f"Master the fundamentals and advanced concepts of {topic}",
+            client=client,
+            parent_id=None,
+            current_depth=0
+        )
+
+        # Set as active objective (archive existing if replace=True)
+        set_active_objective(objective, archive_existing=replace)
+
+        logger.info(f"Created learning objective: {objective['title']}")
+
+        # Return the updated sidebar
+        return ObjectiveSidebar(objective)
+
+    except Exception as e:
+        logger.error(f"Error creating learning objective: {e}")
+        return Div(
+            P(f"Error creating learning objective: {str(e)}", cls="text-error p-4"),
+            cls="alert alert-error"
+        )
+
+
+@rt("/objective/clear")
+def delete():
+    """Clear the active learning objective"""
+    try:
+        clear_active_objective(archive=True)
+        logger.info("Cleared active learning objective")
+        return NoActiveObjectiveState()
+    except Exception as e:
+        logger.error(f"Error clearing objective: {e}")
+        return Div(
+            P(f"Error clearing objective: {str(e)}", cls="text-error"),
+            cls="alert alert-error"
+        )
+
+
+@rt("/objective/{obj_id}/update-mastery")
+def put(obj_id: int, level: str):
+    """Update mastery level for an objective"""
+    try:
+        objectives = load_learning_objectives()
+        active = objectives.get("active_objective")
+
+        if not active:
+            return Div()
+
+        # Update mastery in the tree
+        from learning_objectives_manager import update_mastery_by_id
+        if update_mastery_by_id(active, obj_id, level):
+            objectives["active_objective"] = active
+            save_learning_objectives(objectives)
+            logger.info(f"Updated mastery for objective {obj_id} to {level}")
+
+        # Return updated tree
+        return ObjectiveSidebar(active)
+
+    except Exception as e:
+        logger.error(f"Error updating mastery: {e}")
+        return Div()
+
+
+@rt("/objectives/refresh")
+def get():
+    """Refresh the objectives sidebar (for polling)"""
+    active_objective = get_active_objective()
+    return ObjectiveSidebar(active_objective)
 
 
 if __name__ == "__main__":

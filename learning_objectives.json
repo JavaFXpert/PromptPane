@@ -1,0 +1,279 @@
+{
+  "version": "1.0",
+  "created_at": "2025-11-11T00:00:00Z",
+  "last_updated": "2025-11-11T21:10:35.632401+00:00",
+  "active_objective": {
+    "id": 1,
+    "title": "Learn Music Theory",
+    "description": "Master the fundamentals and advanced concepts of music theory",
+    "mastery_level": "practiced",
+    "parent_id": null,
+    "children": [
+      {
+        "id": 2,
+        "title": "Music Basics",
+        "description": "Understand the core elements of music and notation",
+        "mastery_level": "practiced",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 3,
+            "title": "Notes and Rests",
+            "description": "Learn to read and write musical notes and rests",
+            "mastery_level": "practiced",
+            "parent_id": 2,
+            "children": [
+              {
+                "id": 4,
+                "title": "Note Values and Duration",
+                "description": "Understand whole, half, quarter, and eighth note values",
+                "mastery_level": "practiced",
+                "parent_id": 3,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575867+00:00",
+                "last_updated": "2025-11-11T21:10:35.630871+00:00",
+                "practice_count": 2,
+                "notes": ""
+              },
+              {
+                "id": 5,
+                "title": "Rests and Pauses",
+                "description": "Learn to read and write rests and pauses in music",
+                "mastery_level": "learning",
+                "parent_id": 3,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575904+00:00",
+                "last_updated": "2025-11-11T21:10:35.631047+00:00",
+                "practice_count": 1,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-11T21:08:37.575913+00:00",
+            "last_updated": "2025-11-11T21:10:35.631134+00:00",
+            "practice_count": 2,
+            "notes": ""
+          },
+          {
+            "id": 6,
+            "title": "Scales and Intervals",
+            "description": "Understand major and minor scales, and basic intervals",
+            "mastery_level": "not_started",
+            "parent_id": 2,
+            "children": [
+              {
+                "id": 7,
+                "title": "Major and Minor Scales",
+                "description": "Learn to construct and recognize major and minor scales",
+                "mastery_level": "not_started",
+                "parent_id": 6,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575922+00:00",
+                "last_updated": "2025-11-11T21:08:37.575926+00:00",
+                "practice_count": 0,
+                "notes": ""
+              },
+              {
+                "id": 8,
+                "title": "Basic Intervals",
+                "description": "Understand the basics of intervals, including seconds, thirds, and fourths",
+                "mastery_level": "not_started",
+                "parent_id": 6,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575932+00:00",
+                "last_updated": "2025-11-11T21:08:37.575936+00:00",
+                "practice_count": 0,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-11T21:08:37.575941+00:00",
+            "last_updated": "2025-11-11T21:08:37.575946+00:00",
+            "practice_count": 0,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-11T21:08:37.575951+00:00",
+        "last_updated": "2025-11-11T21:10:35.631210+00:00",
+        "practice_count": 2,
+        "notes": ""
+      },
+      {
+        "id": 9,
+        "title": "Chord Progressions and Harmony",
+        "description": "Learn to construct and analyze chord progressions and harmony",
+        "mastery_level": "not_started",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 10,
+            "title": "Chord Construction",
+            "description": "Learn to construct major, minor, and seventh chords",
+            "mastery_level": "not_started",
+            "parent_id": 9,
+            "children": [
+              {
+                "id": 11,
+                "title": "Major and Minor Chords",
+                "description": "Understand how to construct major and minor chords",
+                "mastery_level": "not_started",
+                "parent_id": 10,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575961+00:00",
+                "last_updated": "2025-11-11T21:08:37.575965+00:00",
+                "practice_count": 0,
+                "notes": ""
+              },
+              {
+                "id": 12,
+                "title": "Seventh Chords",
+                "description": "Learn to construct and use seventh chords in music",
+                "mastery_level": "not_started",
+                "parent_id": 10,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575971+00:00",
+                "last_updated": "2025-11-11T21:08:37.575974+00:00",
+                "practice_count": 0,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-11T21:08:37.575979+00:00",
+            "last_updated": "2025-11-11T21:08:37.575982+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 13,
+            "title": "Chord Progressions",
+            "description": "Learn to analyze and construct common chord progressions",
+            "mastery_level": "not_started",
+            "parent_id": 9,
+            "children": [
+              {
+                "id": 14,
+                "title": "Common Progressions",
+                "description": "Understand common chord progressions, such as the 12-bar blues",
+                "mastery_level": "not_started",
+                "parent_id": 13,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575988+00:00",
+                "last_updated": "2025-11-11T21:08:37.575991+00:00",
+                "practice_count": 0,
+                "notes": ""
+              },
+              {
+                "id": 15,
+                "title": "Progression Analysis",
+                "description": "Learn to analyze chord progressions in different songs and styles",
+                "mastery_level": "not_started",
+                "parent_id": 13,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.575999+00:00",
+                "last_updated": "2025-11-11T21:08:37.576003+00:00",
+                "practice_count": 0,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-11T21:08:37.576007+00:00",
+            "last_updated": "2025-11-11T21:08:37.576010+00:00",
+            "practice_count": 0,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-11T21:08:37.576014+00:00",
+        "last_updated": "2025-11-11T21:08:37.576016+00:00",
+        "practice_count": 0,
+        "notes": ""
+      },
+      {
+        "id": 16,
+        "title": "Advanced Music Theory",
+        "description": "Master advanced concepts, including modulation and counterpoint",
+        "mastery_level": "not_started",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 17,
+            "title": "Modulation and Key Change",
+            "description": "Learn to analyze and construct modulations and key changes",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [
+              {
+                "id": 18,
+                "title": "Modulation Techniques",
+                "description": "Understand common modulation techniques, including pivot chords and common tones",
+                "mastery_level": "not_started",
+                "parent_id": 17,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.576022+00:00",
+                "last_updated": "2025-11-11T21:08:37.576025+00:00",
+                "practice_count": 0,
+                "notes": ""
+              },
+              {
+                "id": 19,
+                "title": "Key Change Analysis",
+                "description": "Learn to analyze key changes in different songs and styles",
+                "mastery_level": "not_started",
+                "parent_id": 17,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.576211+00:00",
+                "last_updated": "2025-11-11T21:08:37.576217+00:00",
+                "practice_count": 0,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-11T21:08:37.576222+00:00",
+            "last_updated": "2025-11-11T21:08:37.576226+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 20,
+            "title": "Counterpoint and Voice Leading",
+            "description": "Learn to construct and analyze counterpoint and voice leading",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [
+              {
+                "id": 21,
+                "title": "First Species Counterpoint",
+                "description": "Understand the basics of first species counterpoint",
+                "mastery_level": "not_started",
+                "parent_id": 20,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.576232+00:00",
+                "last_updated": "2025-11-11T21:08:37.576235+00:00",
+                "practice_count": 0,
+                "notes": ""
+              },
+              {
+                "id": 22,
+                "title": "Voice Leading Techniques",
+                "description": "Learn to apply voice leading techniques, including passing tones and suspensions",
+                "mastery_level": "not_started",
+                "parent_id": 20,
+                "children": [],
+                "created_at": "2025-11-11T21:08:37.576240+00:00",
+                "last_updated": "2025-11-11T21:08:37.576242+00:00",
+                "practice_count": 0,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-11T21:08:37.576247+00:00",
+            "last_updated": "2025-11-11T21:08:37.576250+00:00",
+            "practice_count": 0,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-11T21:08:37.576254+00:00",
+        "last_updated": "2025-11-11T21:08:37.576256+00:00",
+        "practice_count": 0,
+        "notes": ""
+      }
+    ],
+    "created_at": "2025-11-11T21:08:37.576397+00:00",
+    "last_updated": "2025-11-11T21:10:35.631470+00:00",
+    "practice_count": 3,
+    "notes": ""
+  }
+}
