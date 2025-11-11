@@ -1003,6 +1003,7 @@ async def post(session_id: str, subject: str = ""):
 
         # Get learning objectives context if available
         objectives_context = ""
+        active_objective = None
         if config.ENABLE_LEARNING_OBJECTIVES:
             active_objective = get_active_objective()
             if active_objective:
@@ -1014,39 +1015,79 @@ async def post(session_id: str, subject: str = ""):
 
         # Ask LLM to identify the specific concept being discussed
         try:
+            # First try to extract topic from the most recent assistant message
+            if recent_messages and recent_messages[-1]['role'] == 'assistant':
+                last_assistant_msg = recent_messages[-1]['content'][:500]
+                # Look for key phrases that indicate what was being explained
+                topic_hint = f"\n\nMost recent explanation:\n{last_assistant_msg}"
+            else:
+                topic_hint = ""
+
             topic_response = client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": f"""Based on this recent conversation, identify the SPECIFIC concept, topic, or subject currently being discussed or just explained.
 
 Recent conversation:
-{context}{objectives_context}
+{context}{objectives_context}{topic_hint}
 
 IMPORTANT:
+- Look at what was JUST explained or discussed in the most recent messages
 - Focus on the MOST RECENT topic or concept mentioned
 - If explaining a technical term, use that term
 - If discussing a specific subtopic, use the subtopic (not the broad category)
-- Be specific and precise (3-8 words)
+- If teaching about a game, sport, or activity, include that (e.g., "checkers board setup", "chess piece movement")
+- Be specific and precise (2-8 words)
+- NEVER return empty or generic phrases
 - If multiple concepts were discussed, choose the most recent one
 
 Examples of good responses:
+- "checkers board setup"
 - "derivatives and the chain rule"
 - "Python list comprehensions"
 - "Renaissance art in Florence"
 - "quantum entanglement"
+- "piece movement in checkers"
 
-Respond with ONLY the specific concept/topic. No explanations."""}
+Respond with ONLY the specific concept/topic. No explanations, no quotes, no punctuation at the end."""}
                 ],
                 model=config.GROQ_MODEL,
-                temperature=0.2,  # Lower temperature for more focused responses
+                temperature=0.2,
                 max_tokens=100
             )
 
             video_topic = topic_response.choices[0].message.content.strip()
-            logger.info(f"Identified video topic from context: {video_topic}")
+            # Remove any quotes or extra punctuation
+            video_topic = video_topic.strip('"\'.,;:')
+
+            # Validate topic is not empty
+            if not video_topic or len(video_topic) < 3:
+                logger.warning(f"Topic detection returned invalid result: '{video_topic}'")
+                # Fallback: try to extract from last message
+                if recent_messages:
+                    last_msg = recent_messages[-1]['content']
+                    # Simple heuristic: look for the first substantive phrase
+                    words = last_msg.split()[:15]  # First 15 words
+                    video_topic = " ".join(words)
+                    logger.info(f"Using fallback topic from last message: {video_topic}")
+                else:
+                    video_topic = "the current subject"
+
+            logger.info(f"Identified video topic from context: '{video_topic}'")
 
         except Exception as e:
-            logger.error(f"Error identifying topic: {e}")
-            video_topic = "the current subject"
+            logger.error(f"Error identifying topic: {e}", exc_info=True)
+            # Better fallback: use learning objective or last message
+            if objectives_context and active_objective:
+                video_topic = active_objective.get('title', 'the current subject').replace('Learn ', '')
+                logger.info(f"Using learning objective as fallback: {video_topic}")
+            elif recent_messages:
+                # Extract key words from last message
+                last_msg = recent_messages[-1]['content']
+                words = last_msg.split()[:10]
+                video_topic = " ".join(words) if words else "the current subject"
+                logger.info(f"Using last message as fallback: {video_topic}")
+            else:
+                video_topic = "the current subject"
 
     # Add user message to conversation
     db.add_message(session_id, "user", user_message)
