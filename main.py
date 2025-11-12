@@ -994,116 +994,73 @@ async def post(session_id: str, subject: str = ""):
         user_message = f"🎥 Show me a video about: {subject.strip()}"
         video_topic = subject.strip()
     else:
-        # Use conversation context to determine subject
+        # Use LLM to analyze entire conversation and identify current concept
         user_message = "🎥 Show me a video on the current topic"
 
-        # Get more context - last 10 messages with full content
-        recent_messages = conversation[-10:] if len(conversation) >= 10 else conversation
+        # Get full conversation context (last 15 messages to provide sufficient context)
+        recent_messages = conversation[-15:] if len(conversation) >= 15 else conversation
 
-        # Filter out short feedback/validation messages (like "✅ Correct!")
-        # Focus on substantive educational content
-        substantive_messages = []
+        # Build full conversation context for LLM analysis
+        conversation_context = []
         for msg in recent_messages:
-            content = msg['content']
-            # Skip very short messages (likely just feedback)
-            if len(content) > 50:
-                # Skip messages that are just validation/feedback
-                if not (content.strip().startswith('✅') or content.strip().startswith('❌')):
-                    substantive_messages.append(msg)
-                elif len(content) > 200:  # Long messages with feedback but also content
-                    substantive_messages.append(msg)
-
-        # Use substantive messages if we found any, otherwise use all
-        messages_for_context = substantive_messages if substantive_messages else recent_messages
-        context = "\n".join([f"{msg['role']}: {msg['content'][:500]}" for msg in messages_for_context])
+            conversation_context.append({
+                "role": msg['role'],
+                "content": msg['content']
+            })
 
         # Get learning objectives context if available
         objectives_context = ""
-        active_objective = None
         if config.ENABLE_LEARNING_OBJECTIVES:
             active_objective = get_active_objective()
             if active_objective:
-                # Get the most recent objectives being discussed
-                objectives_summary = f"Current learning path: {active_objective['title']}"
+                objectives_context = f"\n\nCurrent learning path: {active_objective['title']}"
                 if active_objective.get('children'):
-                    objectives_summary += f"\nRecent objectives: {', '.join([child['title'] for child in active_objective['children'][:3]])}"
-                objectives_context = f"\n\nLearning Context:\n{objectives_summary}"
+                    objectives_context += f"\nRecent objectives: {', '.join([child['title'] for child in active_objective['children'][:3]])}"
 
-        # Ask LLM to identify the specific concept being discussed
+        # Ask LLM to identify the current educational concept
         try:
-            # First try to extract topic from the most recent assistant message
-            if recent_messages and recent_messages[-1]['role'] == 'assistant':
-                last_assistant_msg = recent_messages[-1]['content'][:500]
-                # Look for key phrases that indicate what was being explained
-                topic_hint = f"\n\nMost recent explanation:\n{last_assistant_msg}"
-            else:
-                topic_hint = ""
+            # Build prompt asking LLM to analyze the conversation
+            analysis_prompt = f"""Analyze the following conversation and identify the PRIMARY educational concept or topic currently being discussed.
 
-            topic_response = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": f"""Based on this recent conversation, identify the SPECIFIC concept, topic, or subject currently being discussed or just explained.
+{objectives_context}
 
-Recent conversation:
-{context}{objectives_context}{topic_hint}
-
-IMPORTANT:
-- Look at what was JUST explained or discussed in the most recent messages
-- Focus on the MOST RECENT topic or concept mentioned
-- If explaining a technical term, use that term
-- If discussing a specific subtopic, use the subtopic (not the broad category)
-- If teaching about a game, sport, or activity, include that (e.g., "checkers board setup", "chess piece movement")
-- Be specific and precise (2-8 words)
-- NEVER return empty or generic phrases
-- If multiple concepts were discussed, choose the most recent one
+Look at the conversation flow and identify what concept the learner is currently studying or being taught. This should be the main subject matter of the most recent exchanges.
 
 Examples of good responses:
 - "checkers board setup"
-- "derivatives and the chain rule"
+- "how checkers pieces move"
 - "Python list comprehensions"
-- "Renaissance art in Florence"
 - "quantum entanglement"
-- "piece movement in checkers"
+- "derivatives and chain rule"
 
-Respond with ONLY the specific concept/topic. No explanations, no quotes, no punctuation at the end."""}
-                ],
+Respond with ONLY the specific concept/topic (2-8 words). No explanations, no quotes, no extra text."""
+
+            # Prepare messages with full conversation context
+            analysis_messages = conversation_context + [
+                {"role": "user", "content": analysis_prompt}
+            ]
+
+            topic_response = client.chat.completions.create(
+                messages=analysis_messages,
                 model=config.GROQ_MODEL,
                 temperature=0.2,
-                max_tokens=100
+                max_tokens=50
             )
 
             video_topic = topic_response.choices[0].message.content.strip()
-            # Remove any quotes or extra punctuation
-            video_topic = video_topic.strip('"\'.,;:')
+            # Clean up the response
+            video_topic = video_topic.strip('"\'.,;:!?')
 
-            # Validate topic is not empty
+            # Validate we got a meaningful response
             if not video_topic or len(video_topic) < 3:
                 logger.warning(f"Topic detection returned invalid result: '{video_topic}'")
-                # Fallback: try to extract from last message
-                if recent_messages:
-                    last_msg = recent_messages[-1]['content']
-                    # Simple heuristic: look for the first substantive phrase
-                    words = last_msg.split()[:15]  # First 15 words
-                    video_topic = " ".join(words)
-                    logger.info(f"Using fallback topic from last message: {video_topic}")
-                else:
-                    video_topic = "the current subject"
+                video_topic = "the current subject"
 
-            logger.info(f"Identified video topic from context: '{video_topic}'")
+            logger.info(f"LLM identified video topic: '{video_topic}'")
 
         except Exception as e:
-            logger.error(f"Error identifying topic: {e}", exc_info=True)
-            # Better fallback: use learning objective or last message
-            if objectives_context and active_objective:
-                video_topic = active_objective.get('title', 'the current subject').replace('Learn ', '')
-                logger.info(f"Using learning objective as fallback: {video_topic}")
-            elif recent_messages:
-                # Extract key words from last message
-                last_msg = recent_messages[-1]['content']
-                words = last_msg.split()[:10]
-                video_topic = " ".join(words) if words else "the current subject"
-                logger.info(f"Using last message as fallback: {video_topic}")
-            else:
-                video_topic = "the current subject"
+            logger.error(f"Error identifying topic with LLM: {e}", exc_info=True)
+            video_topic = "the current subject"
 
     # Add user message to conversation
     db.add_message(session_id, "user", user_message)
