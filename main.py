@@ -1015,29 +1015,24 @@ async def post(session_id: str, subject: str = ""):
 
             conversation_formatted = "\n\n".join(conversation_text)
 
-            # Build prompt asking LLM to analyze the conversation
-            analysis_prompt = f"""Analyze this conversation and identify the current concept being discussed or taught:
+            logger.info(f"Conversation formatted ({len(recent_messages)} messages):\n{conversation_formatted[:800]}")
+
+            # Build a simpler, more direct prompt
+            analysis_prompt = f"""Here is a recent conversation:
 
 {conversation_formatted}
 
-What specific concept or topic is being taught right now? Answer with just the concept name (2-8 words).
+Based on this conversation, what is the specific topic being discussed right now? Reply with 2-6 words only."""
 
-Examples:
-- checkers defensive strategies
-- checkers piece movement
-- Python list comprehensions
-
-Concept:"""
-
-            logger.info(f"Requesting topic analysis from LLM with {len(recent_messages)} messages of context")
+            logger.info(f"Sending topic analysis request to LLM")
 
             topic_response = client.chat.completions.create(
                 messages=[
                     {"role": "user", "content": analysis_prompt}
                 ],
                 model=config.GROQ_MODEL,
-                temperature=0.1,
-                max_tokens=30
+                temperature=0.2,
+                max_tokens=50
             )
 
             video_topic = topic_response.choices[0].message.content.strip()
