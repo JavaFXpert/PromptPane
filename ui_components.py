@@ -198,7 +198,7 @@ def ChatInterface(session_id: str, conversation: list[dict[str, Any]], get_conve
                 hx_vals="js:{subject: document.getElementById('message-input').value}",
                 onclick="""
                     const subject = document.getElementById('message-input').value.trim();
-                    const userMessage = subject ? `🎥 Show me a video about: ${subject}` : '🎥 Finding a video on this topic...';
+                    const userMessage = subject ? `🎥 Please show me a short, highly rated video about ${subject}` : '🎥 Please show me a short, highly rated video about the current concept';
 
                     // Show user message immediately
                     const now = new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});

@@ -970,10 +970,8 @@ async def post(session_id: str, subject: str = ""):
     """
     Handle video request button clicks.
 
-    When a user clicks the Video button:
-    1. If subject is provided, use that as the video topic
-    2. If subject is empty, analyze recent conversation to determine the topic
-    3. Ask the LLM to find a highly rated, short YouTube video on that topic
+    Sends a message asking the LLM to find a short, highly rated video about
+    either the specified subject or the current concept in the conversation.
 
     Args:
         session_id: Current session identifier
@@ -988,80 +986,13 @@ async def post(session_id: str, subject: str = ""):
     # Get conversation history
     conversation = db.get_conversation(session_id)
 
-    # Determine the video subject
+    # Determine the user message
     if subject and subject.strip():
         # User provided a specific subject
-        user_message = f"🎥 Show me a video about: {subject.strip()}"
-        video_topic = subject.strip()
+        user_message = f"🎥 Please show me a short, highly rated video about {subject.strip()}"
     else:
-        # Use LLM to analyze entire conversation and identify current concept
-        # Get full conversation context (last 15 messages to provide sufficient context)
-        recent_messages = conversation[-15:] if len(conversation) >= 15 else conversation
-
-        # Get learning objectives context if available
-        active_objective = None
-        if config.ENABLE_LEARNING_OBJECTIVES:
-            active_objective = get_active_objective()
-
-        # Ask LLM to identify the current concept
-        try:
-            # Format the conversation as text for analysis
-            conversation_text = []
-            for msg in recent_messages:
-                role = "User" if msg['role'] == 'user' else "Assistant"
-                # Limit each message to 1000 chars for context (was 300, too short)
-                content = msg['content'][:1000]
-                conversation_text.append(f"{role}: {content}")
-
-            conversation_formatted = "\n\n".join(conversation_text)
-
-            logger.info(f"Conversation formatted ({len(recent_messages)} messages):\n{conversation_formatted[:1500]}")
-
-            # Build a simpler, more direct prompt
-            analysis_prompt = f"""Here is a recent conversation between a teacher and student:
-
-{conversation_formatted}
-
-What specific concept or topic is currently being taught? Answer with just the topic name (2-8 words).
-Examples: "checkers traps", "priming moves in checkers", "Python functions"
-
-Topic:"""
-
-            logger.info(f"Sending topic analysis request to LLM")
-
-            topic_response = client.chat.completions.create(
-                messages=[
-                    {"role": "user", "content": analysis_prompt}
-                ],
-                model=config.GROQ_MODEL,
-                temperature=0.3,
-                max_tokens=20
-            )
-
-            video_topic = topic_response.choices[0].message.content.strip()
-            logger.info(f"Raw LLM response for topic: '{video_topic}'")
-
-            # Clean up the response
-            video_topic = video_topic.strip('"\'.,;:!?')
-
-            # Validate we got a meaningful response
-            if not video_topic or len(video_topic) < 3:
-                logger.warning(f"Topic detection returned invalid result: '{video_topic}'")
-                # Try to use learning objective as fallback
-                if active_objective:
-                    video_topic = active_objective.get('title', 'the current subject')
-                    logger.info(f"Using learning objective as fallback: '{video_topic}'")
-                else:
-                    video_topic = "the current subject"
-
-            logger.info(f"Final video topic: '{video_topic}'")
-
-        except Exception as e:
-            logger.error(f"Error identifying topic with LLM: {e}", exc_info=True)
-            video_topic = "the current subject"
-
-        # Build user message with the identified topic
-        user_message = f"🎥 Show me a video on the {video_topic}"
+        # Ask LLM to find video on current concept
+        user_message = "🎥 Please show me a short, highly rated video about the current concept"
 
     # Add user message to conversation
     db.add_message(session_id, "user", user_message)
@@ -1069,48 +1000,21 @@ Topic:"""
     # Build context from knowledge graph
     kg_context = build_context_from_kg()
 
-    # Add learning objectives context for better video selection
+    # Add learning objectives context
     objectives_full_context = ""
     if config.ENABLE_LEARNING_OBJECTIVES:
         objectives_full_context = build_objectives_context()
 
-    # Build system prompt for video request
-    system_prompt_with_instruction = f"""{SYSTEM_PROMPT}
-
-{kg_context}
-
-{objectives_full_context}
-
-CRITICAL - Video Request:
-The user clicked the Video button requesting a YouTube video about: "{video_topic}"
-
-This is the SPECIFIC CONCEPT they want to learn about right now based on the conversation context.
-
-YOU MUST:
-1. Use browser_search to find a highly rated, educational YouTube video (5-20 minutes) that specifically explains "{video_topic}"
-2. Search query should be specific: "best youtube video explaining {video_topic}" or "{video_topic} tutorial youtube"
-3. Prioritize:
-   - Clear, well-explained videos
-   - Recent videos (2018+) with good production quality
-   - Videos from educational channels when possible
-   - Videos that match the learner's level (beginner/intermediate/advanced based on conversation)
-4. ALWAYS embed the video using: <mui type="video" url="YOUTUBE_URL_HERE" caption="Video title">
-5. Provide a brief 1-2 sentence introduction BEFORE the video explaining why this video is helpful
-6. Include 2-3 related <concept> links AFTER the video for further exploration
-
-REQUIRED FORMAT:
-Here's an excellent video that explains {video_topic}:
-
-<mui type="video" url="https://www.youtube.com/watch?v=VIDEO_ID" caption="Video Title - Duration">
-</mui>
-
-Related concepts: <concept>term1</concept>, <concept>term2</concept>
-
-DO NOT respond without including a video. The user specifically requested a video about "{video_topic}"."""
+    # Build system prompt (standard prompt handles video requests)
+    system_prompt = SYSTEM_PROMPT
+    if kg_context:
+        system_prompt = f"{system_prompt}\n\n{kg_context}"
+    if objectives_full_context:
+        system_prompt = f"{system_prompt}\n\n{objectives_full_context}"
 
     # Build messages for API
     messages_for_api = [
-        {"role": "system", "content": system_prompt_with_instruction}
+        {"role": "system", "content": system_prompt}
     ]
 
     # Add recent conversation history for context (last 5 messages)
