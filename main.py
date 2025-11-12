@@ -1008,6 +1008,7 @@ async def post(session_id: str, subject: str = ""):
 
         # Get learning objectives context if available
         objectives_context = ""
+        active_objective = None
         if config.ENABLE_LEARNING_OBJECTIVES:
             active_objective = get_active_objective()
             if active_objective:
@@ -1018,43 +1019,49 @@ async def post(session_id: str, subject: str = ""):
         # Ask LLM to identify the current concept
         try:
             # Build prompt asking LLM to analyze the conversation
-            analysis_prompt = f"""What is the current concept in the conversation?
+            analysis_prompt = """What is the current concept in the conversation?
 
-{objectives_context}
+Look at the recent messages and identify the specific topic or concept being discussed or taught right now.
 
-Look at the conversation flow and identify what concept is currently being discussed or taught. This should be the main subject matter of the most recent exchanges.
+Answer with just the concept name (2-8 words). Examples:
+- checkers defensive strategies
+- checkers piece movement
+- Python list comprehensions
+- quantum entanglement
 
-Examples of good responses:
-- "checkers board setup"
-- "how checkers pieces move"
-- "Python list comprehensions"
-- "quantum entanglement"
-- "derivatives and chain rule"
-
-Respond with ONLY the specific concept/topic (2-8 words). No explanations, no quotes, no extra text."""
+Just the concept name, nothing else:"""
 
             # Prepare messages with full conversation context
             analysis_messages = conversation_context + [
                 {"role": "user", "content": analysis_prompt}
             ]
 
+            logger.info(f"Requesting topic analysis from LLM with {len(conversation_context)} messages of context")
+
             topic_response = client.chat.completions.create(
                 messages=analysis_messages,
                 model=config.GROQ_MODEL,
-                temperature=0.2,
-                max_tokens=50
+                temperature=0.1,
+                max_tokens=30
             )
 
             video_topic = topic_response.choices[0].message.content.strip()
+            logger.info(f"Raw LLM response for topic: '{video_topic}'")
+
             # Clean up the response
             video_topic = video_topic.strip('"\'.,;:!?')
 
             # Validate we got a meaningful response
             if not video_topic or len(video_topic) < 3:
                 logger.warning(f"Topic detection returned invalid result: '{video_topic}'")
-                video_topic = "the current subject"
+                # Try to use learning objective as fallback
+                if active_objective:
+                    video_topic = active_objective.get('title', 'the current subject')
+                    logger.info(f"Using learning objective as fallback: '{video_topic}'")
+                else:
+                    video_topic = "the current subject"
 
-            logger.info(f"LLM identified video topic: '{video_topic}'")
+            logger.info(f"Final video topic: '{video_topic}'")
 
         except Exception as e:
             logger.error(f"Error identifying topic with LLM: {e}", exc_info=True)
