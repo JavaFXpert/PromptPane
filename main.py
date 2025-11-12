@@ -998,48 +998,43 @@ async def post(session_id: str, subject: str = ""):
         # Get full conversation context (last 15 messages to provide sufficient context)
         recent_messages = conversation[-15:] if len(conversation) >= 15 else conversation
 
-        # Build full conversation context for LLM analysis
-        conversation_context = []
-        for msg in recent_messages:
-            conversation_context.append({
-                "role": msg['role'],
-                "content": msg['content']
-            })
-
         # Get learning objectives context if available
-        objectives_context = ""
         active_objective = None
         if config.ENABLE_LEARNING_OBJECTIVES:
             active_objective = get_active_objective()
-            if active_objective:
-                objectives_context = f"\n\nCurrent learning path: {active_objective['title']}"
-                if active_objective.get('children'):
-                    objectives_context += f"\nRecent objectives: {', '.join([child['title'] for child in active_objective['children'][:3]])}"
 
         # Ask LLM to identify the current concept
         try:
+            # Format the conversation as text for analysis
+            conversation_text = []
+            for msg in recent_messages:
+                role = "User" if msg['role'] == 'user' else "Assistant"
+                # Limit each message to 300 chars for context
+                content = msg['content'][:300]
+                conversation_text.append(f"{role}: {content}")
+
+            conversation_formatted = "\n\n".join(conversation_text)
+
             # Build prompt asking LLM to analyze the conversation
-            analysis_prompt = """What is the current concept in the conversation?
+            analysis_prompt = f"""Analyze this conversation and identify the current concept being discussed or taught:
 
-Look at the recent messages and identify the specific topic or concept being discussed or taught right now.
+{conversation_formatted}
 
-Answer with just the concept name (2-8 words). Examples:
+What specific concept or topic is being taught right now? Answer with just the concept name (2-8 words).
+
+Examples:
 - checkers defensive strategies
 - checkers piece movement
 - Python list comprehensions
-- quantum entanglement
 
-Just the concept name, nothing else:"""
+Concept:"""
 
-            # Prepare messages with full conversation context
-            analysis_messages = conversation_context + [
-                {"role": "user", "content": analysis_prompt}
-            ]
-
-            logger.info(f"Requesting topic analysis from LLM with {len(conversation_context)} messages of context")
+            logger.info(f"Requesting topic analysis from LLM with {len(recent_messages)} messages of context")
 
             topic_response = client.chat.completions.create(
-                messages=analysis_messages,
+                messages=[
+                    {"role": "user", "content": analysis_prompt}
+                ],
                 model=config.GROQ_MODEL,
                 temperature=0.1,
                 max_tokens=30
