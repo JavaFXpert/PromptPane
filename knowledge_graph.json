@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_updated": "2025-11-12T13:55:37.576829+00:00",
+  "last_updated": "2025-11-12T15:23:44.249979+00:00",
   "entities": [
     {
       "id": 1,
@@ -201,19 +201,15 @@
     },
     {
       "id": 18,
-      "entity_type": "fact",
-      "name": "Learning plan pending concepts",
-      "value": "addition, subtraction, shape identification, time concepts",
-      "description": "Concepts still need to be mastered to pass the 1st grade math learning plan",
+      "entity_type": "learning_path",
+      "name": "Learn About the Book of Ephesians",
+      "value": "project",
+      "description": "Learning Path for studying the Book of Ephesians",
       "confidence": 0.95,
-      "relevance_score": 1.0,
-      "created_at": "2025-11-12T13:55:00Z",
-      "last_mentioned": "2025-11-12T13:55:00Z",
-      "mention_count": 1,
-      "category": "education",
-      "verified": true,
-      "source": "conversation",
-      "date_learned": "2025-11-12"
+      "relevance_score": 0.8,
+      "created_at": "2025-11-12T14:30:00Z",
+      "last_mentioned": "2025-11-12T15:30:00Z",
+      "mention_count": 4
     }
   ],
   "relationships": [
@@ -414,6 +410,15 @@
       "description": "girlfriend",
       "confidence": 0.95,
       "created_at": "2025-11-07T23:58:00Z"
+    },
+    {
+      "id": 23,
+      "entity1_id": 1,
+      "entity2_id": 18,
+      "relationship_type": "interest",
+      "description": "studying the Book of Ephesians",
+      "confidence": 0.9,
+      "created_at": "2025-11-12T14:30:00Z"
     }
   ]
 }
