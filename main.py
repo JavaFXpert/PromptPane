@@ -1039,17 +1039,17 @@ async def post(session_id: str, subject: str = ""):
 
         # Check if response was successful
         if not video_response or video_response.strip() == "":
-            video_response = f"I apologize, but I couldn't find a suitable video about '{video_topic}'. Please try searching directly on YouTube."
+            video_response = "I apologize, but I couldn't find a suitable video at the moment. Please try searching directly on YouTube."
 
         # Validate that response includes a video tag
         if '<mui type="video"' not in video_response:
             logger.warning(f"LLM response for video request did not include video tag. Response: {video_response[:200]}")
-            # Add a helpful message if no video was included
-            video_response = f"I apologize, but I wasn't able to find a suitable video about '{video_topic}' at the moment. You can search directly on YouTube for: **{video_topic} tutorial**\n\nWould you like me to help with something else related to {video_topic}?"
+            # The LLM responded but didn't include a video - just use its response as-is
+            # It likely explained why it couldn't find a video or provided alternative help
 
     except Exception as e:
         logger.error(f"Error getting video recommendation: {e}")
-        video_response = f"I encountered an error while searching for a video about '{video_topic}'. Please try again."
+        video_response = "I encountered an error while searching for a video. Please try again."
 
     # Add assistant's response to conversation
     db.add_message(session_id, "assistant", video_response)
