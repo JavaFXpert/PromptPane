@@ -1,26 +1,26 @@
 {
   "version": "1.0",
   "created_at": "2025-11-11T00:00:00Z",
-  "last_updated": "2025-11-12T15:24:03.095266+00:00",
+  "last_updated": "2025-11-12T15:40:00.865658+00:00",
   "active_objective": {
     "id": 1,
     "title": "Learn Book of 1st John",
     "description": "Master the fundamentals and advanced concepts of Book of 1st John",
-    "mastery_level": "practiced",
+    "mastery_level": "mastered",
     "parent_id": null,
     "children": [
       {
         "id": 2,
         "title": "Introduction to 1st John",
         "description": "Understand the context, purpose, and overview of the Book of 1st John",
-        "mastery_level": "learning",
+        "mastery_level": "mastered",
         "parent_id": 1,
         "children": [
           {
             "id": 3,
             "title": "Historical Context",
             "description": "Learn about the author, audience, and time period of 1st John",
-            "mastery_level": "practiced",
+            "mastery_level": "mastered",
             "parent_id": 2,
             "children": [
               {
@@ -39,25 +39,25 @@
                 "id": 5,
                 "title": "Historical Background",
                 "description": "Understand the social, religious, and cultural context of 1st John",
-                "mastery_level": "not_started",
+                "mastery_level": "practiced",
                 "parent_id": 3,
                 "children": [],
                 "created_at": "2025-11-12T14:33:03.989229+00:00",
-                "last_updated": "2025-11-12T14:33:03.989233+00:00",
-                "practice_count": 0,
+                "last_updated": "2025-11-12T15:32:08.369742+00:00",
+                "practice_count": 3,
                 "notes": ""
               }
             ],
             "created_at": "2025-11-12T14:33:03.989239+00:00",
-            "last_updated": "2025-11-12T14:36:26.788321+00:00",
-            "practice_count": 4,
+            "last_updated": "2025-11-12T15:31:47.173804+00:00",
+            "practice_count": 5,
             "notes": ""
           },
           {
             "id": 6,
             "title": "Purpose and Overview",
             "description": "Understand the main themes and purpose of 1st John",
-            "mastery_level": "practiced",
+            "mastery_level": "mastered",
             "parent_id": 2,
             "children": [
               {
@@ -68,32 +68,32 @@
                 "parent_id": 6,
                 "children": [],
                 "created_at": "2025-11-12T14:33:03.989247+00:00",
-                "last_updated": "2025-11-12T15:20:07.607625+00:00",
-                "practice_count": 5,
+                "last_updated": "2025-11-12T15:40:00.864249+00:00",
+                "practice_count": 7,
                 "notes": ""
               },
               {
                 "id": 8,
                 "title": "Book Overview",
                 "description": "Understand the structure and content of the Book of 1st John",
-                "mastery_level": "not_started",
+                "mastery_level": "mastered",
                 "parent_id": 6,
                 "children": [],
                 "created_at": "2025-11-12T14:33:03.989254+00:00",
-                "last_updated": "2025-11-12T14:33:03.989257+00:00",
-                "practice_count": 0,
+                "last_updated": "2025-11-12T15:34:52.430806+00:00",
+                "practice_count": 5,
                 "notes": ""
               }
             ],
             "created_at": "2025-11-12T14:33:03.989261+00:00",
-            "last_updated": "2025-11-12T14:44:48.715321+00:00",
-            "practice_count": 2,
+            "last_updated": "2025-11-12T15:33:48.619849+00:00",
+            "practice_count": 3,
             "notes": ""
           }
         ],
         "created_at": "2025-11-12T14:33:03.989268+00:00",
-        "last_updated": "2025-11-12T14:36:26.788918+00:00",
-        "practice_count": 5,
+        "last_updated": "2025-11-12T15:39:54.602276+00:00",
+        "practice_count": 8,
         "notes": ""
       },
       {
@@ -126,12 +126,12 @@
                 "id": 12,
                 "title": "Jesus as Savior",
                 "description": "Understand Jesus' role as Savior in 1st John",
-                "mastery_level": "practiced",
+                "mastery_level": "mastered",
                 "parent_id": 10,
                 "children": [],
                 "created_at": "2025-11-12T14:33:03.989282+00:00",
-                "last_updated": "2025-11-12T15:01:12.674785+00:00",
-                "practice_count": 4,
+                "last_updated": "2025-11-12T15:38:25.208389+00:00",
+                "practice_count": 8,
                 "notes": ""
               }
             ],
@@ -163,12 +163,12 @@
                 "id": 15,
                 "title": "Eternal Life",
                 "description": "Understand the concept of eternal life in 1st John",
-                "mastery_level": "practiced",
+                "mastery_level": "mastered",
                 "parent_id": 13,
                 "children": [],
                 "created_at": "2025-11-12T14:33:03.989303+00:00",
-                "last_updated": "2025-11-12T15:12:22.840638+00:00",
-                "practice_count": 4,
+                "last_updated": "2025-11-12T15:40:00.864476+00:00",
+                "practice_count": 9,
                 "notes": ""
               }
             ],
@@ -187,26 +187,26 @@
         "id": 16,
         "title": "Practical Application",
         "description": "Apply the teachings of 1st John to everyday life",
-        "mastery_level": "practiced",
+        "mastery_level": "mastered",
         "parent_id": 1,
         "children": [
           {
             "id": 17,
             "title": "Fellowship and Community",
             "description": "Learn to apply the principles of fellowship and community in 1st John",
-            "mastery_level": "practiced",
+            "mastery_level": "mastered",
             "parent_id": 16,
             "children": [
               {
                 "id": 18,
                 "title": "Walking in the Light",
                 "description": "Understand the importance of walking in the light and loving one another",
-                "mastery_level": "practiced",
+                "mastery_level": "mastered",
                 "parent_id": 17,
                 "children": [],
                 "created_at": "2025-11-12T14:33:03.989323+00:00",
-                "last_updated": "2025-11-12T15:19:10.778413+00:00",
-                "practice_count": 4,
+                "last_updated": "2025-11-12T15:40:00.864576+00:00",
+                "practice_count": 6,
                 "notes": ""
               },
               {
@@ -223,8 +223,8 @@
               }
             ],
             "created_at": "2025-11-12T14:33:03.989335+00:00",
-            "last_updated": "2025-11-12T15:22:35.948631+00:00",
-            "practice_count": 3,
+            "last_updated": "2025-11-12T15:39:54.601757+00:00",
+            "practice_count": 5,
             "notes": ""
           },
           {
@@ -266,14 +266,14 @@
           }
         ],
         "created_at": "2025-11-12T14:33:03.989360+00:00",
-        "last_updated": "2025-11-12T15:23:44.860618+00:00",
-        "practice_count": 2,
+        "last_updated": "2025-11-12T15:39:54.601484+00:00",
+        "practice_count": 4,
         "notes": ""
       }
     ],
     "created_at": "2025-11-12T14:33:03.989366+00:00",
-    "last_updated": "2025-11-12T15:23:44.860807+00:00",
-    "practice_count": 7,
+    "last_updated": "2025-11-12T15:39:45.151539+00:00",
+    "practice_count": 8,
     "notes": ""
   }
 }
