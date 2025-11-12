@@ -438,6 +438,9 @@ async def post(session_id: str, message: str):
         *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
+    # Track if mastery updates occur (for sidebar refresh)
+    mastery_updates_occurred = False
+
     try:
         # Execute debug command if applicable (will raise error)
         if is_debug_command(message):
@@ -520,6 +523,7 @@ async def post(session_id: str, message: str):
 
                     if updates:
                         logger.info(f"Updated {len(updates)} objective mastery levels")
+                        mastery_updates_occurred = True
 
                 except Exception as e:
                     # Don't fail the request if mastery update fails
@@ -539,13 +543,25 @@ async def post(session_id: str, message: str):
     conversation = db.get_conversation(session_id)
     assistant_msg = conversation[-1]
 
-    # Return only the assistant's message (cleanup handled by hx_on__after_swap)
-    return ChatMessage(
+    # Create the chat message response
+    chat_message = ChatMessage(
         assistant_msg["role"],
         assistant_msg["content"],
         assistant_msg.get("timestamp"),
         session_id
     )
+
+    # If mastery was updated, add a script to refresh the sidebar
+    if mastery_updates_occurred:
+        refresh_script = Script("""
+            htmx.ajax('GET', '/sidebar/learning-path', {
+                target: '#right-sidebar-content',
+                swap: 'innerHTML'
+            });
+        """)
+        return Div(chat_message, refresh_script)
+
+    return chat_message
 
 @rt("/clear/{session_id}")
 def post(session_id: str):
@@ -756,6 +772,9 @@ async def post(session_id: str, message: str):
         *[{"role": msg["role"], "content": msg["content"]} for msg in conversation]
     ]
 
+    # Track if mastery updates occur (for sidebar refresh)
+    mastery_updates_occurred = False
+
     try:
         # Execute debug command if applicable (will raise error)
         if is_debug_command(message):
@@ -857,13 +876,25 @@ async def post(session_id: str, message: str):
     conversation = db.get_conversation(session_id)
     assistant_msg = conversation[-1]
 
-    # Return only the assistant's message (cleanup handled by hx_on__after_swap)
-    return ChatMessage(
+    # Create the chat message response
+    chat_message = ChatMessage(
         assistant_msg["role"],
         assistant_msg["content"],
         assistant_msg.get("timestamp"),
         session_id
     )
+
+    # If mastery was updated, add a script to refresh the sidebar
+    if mastery_updates_occurred:
+        refresh_script = Script("""
+            htmx.ajax('GET', '/sidebar/learning-path', {
+                target: '#right-sidebar-content',
+                swap: 'innerHTML'
+            });
+        """)
+        return Div(chat_message, refresh_script)
+
+    return chat_message
 
 
 @rt("/explain-concept/{session_id}")
