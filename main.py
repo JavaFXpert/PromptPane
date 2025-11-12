@@ -1009,20 +1009,23 @@ async def post(session_id: str, subject: str = ""):
             conversation_text = []
             for msg in recent_messages:
                 role = "User" if msg['role'] == 'user' else "Assistant"
-                # Limit each message to 300 chars for context
-                content = msg['content'][:300]
+                # Limit each message to 1000 chars for context (was 300, too short)
+                content = msg['content'][:1000]
                 conversation_text.append(f"{role}: {content}")
 
             conversation_formatted = "\n\n".join(conversation_text)
 
-            logger.info(f"Conversation formatted ({len(recent_messages)} messages):\n{conversation_formatted[:800]}")
+            logger.info(f"Conversation formatted ({len(recent_messages)} messages):\n{conversation_formatted[:1500]}")
 
             # Build a simpler, more direct prompt
-            analysis_prompt = f"""Here is a recent conversation:
+            analysis_prompt = f"""Here is a recent conversation between a teacher and student:
 
 {conversation_formatted}
 
-Based on this conversation, what is the specific topic being discussed right now? Reply with 2-6 words only."""
+What specific concept or topic is currently being taught? Answer with just the topic name (2-8 words).
+Examples: "checkers traps", "priming moves in checkers", "Python functions"
+
+Topic:"""
 
             logger.info(f"Sending topic analysis request to LLM")
 
@@ -1031,8 +1034,8 @@ Based on this conversation, what is the specific topic being discussed right now
                     {"role": "user", "content": analysis_prompt}
                 ],
                 model=config.GROQ_MODEL,
-                temperature=0.2,
-                max_tokens=50
+                temperature=0.3,
+                max_tokens=20
             )
 
             video_topic = topic_response.choices[0].message.content.strip()
