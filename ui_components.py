@@ -192,13 +192,12 @@ def ChatInterface(session_id: str, conversation: list[dict[str, Any]], get_conve
                 id="video-btn",
                 title="Request a video on this topic",
                 aria_label="Request video",
-                hx_post=f"/request-video/{session_id}",
+                hx_post=f"/chat/{session_id}",
                 hx_target="#scroll-anchor",
                 hx_swap="beforebegin",
-                hx_vals="js:{subject: document.getElementById('message-input').value}",
+                hx_vals="js:{message: 'Please show me a short, highly rated video about the current concept'}",
                 onclick="""
-                    const subject = document.getElementById('message-input').value.trim();
-                    const userMessage = subject ? `🎥 Please show me a short, highly rated video about ${subject}` : '🎥 Please show me a short, highly rated video about the current concept';
+                    const userMessage = 'Please show me a short, highly rated video about the current concept';
 
                     // Show user message immediately
                     const now = new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
