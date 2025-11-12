@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_updated": "2025-11-11T23:44:11.902481+00:00",
+  "last_updated": "2025-11-12T13:55:37.576829+00:00",
   "entities": [
     {
       "id": 1,
@@ -11,8 +11,8 @@
       "confidence": 1.0,
       "relevance_score": 1.0,
       "created_at": "2025-11-06T03:54:52.268524+00:00",
-      "last_mentioned": "2025-11-12T00:01:00Z",
-      "mention_count": 21,
+      "last_mentioned": "2025-11-12T13:55:00Z",
+      "mention_count": 25,
       "birthdate": "1955-04-19",
       "gender": "male"
     },
@@ -180,8 +180,8 @@
       "confidence": 0.95,
       "relevance_score": 1.0,
       "created_at": "2025-11-07T23:30:00Z",
-      "last_mentioned": "2025-11-07T23:59:45Z",
-      "mention_count": 2,
+      "last_mentioned": "2025-11-12T13:45:00Z",
+      "mention_count": 3,
       "recurring": true,
       "importance": "high",
       "event_type": "birthday"
@@ -198,6 +198,22 @@
       "last_mentioned": "2025-11-08T22:30:00Z",
       "mention_count": 3,
       "birthdate": "2005-03-15"
+    },
+    {
+      "id": 18,
+      "entity_type": "fact",
+      "name": "Learning plan pending concepts",
+      "value": "addition, subtraction, shape identification, time concepts",
+      "description": "Concepts still need to be mastered to pass the 1st grade math learning plan",
+      "confidence": 0.95,
+      "relevance_score": 1.0,
+      "created_at": "2025-11-12T13:55:00Z",
+      "last_mentioned": "2025-11-12T13:55:00Z",
+      "mention_count": 1,
+      "category": "education",
+      "verified": true,
+      "source": "conversation",
+      "date_learned": "2025-11-12"
     }
   ],
   "relationships": [
