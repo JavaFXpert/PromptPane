@@ -995,8 +995,6 @@ async def post(session_id: str, subject: str = ""):
         video_topic = subject.strip()
     else:
         # Use LLM to analyze entire conversation and identify current concept
-        user_message = "🎥 Show me a video on the current topic"
-
         # Get full conversation context (last 15 messages to provide sufficient context)
         recent_messages = conversation[-15:] if len(conversation) >= 15 else conversation
 
@@ -1017,14 +1015,14 @@ async def post(session_id: str, subject: str = ""):
                 if active_objective.get('children'):
                     objectives_context += f"\nRecent objectives: {', '.join([child['title'] for child in active_objective['children'][:3]])}"
 
-        # Ask LLM to identify the current educational concept
+        # Ask LLM to identify the current concept
         try:
             # Build prompt asking LLM to analyze the conversation
-            analysis_prompt = f"""Analyze the following conversation and identify the PRIMARY educational concept or topic currently being discussed.
+            analysis_prompt = f"""What is the current concept in the conversation?
 
 {objectives_context}
 
-Look at the conversation flow and identify what concept the learner is currently studying or being taught. This should be the main subject matter of the most recent exchanges.
+Look at the conversation flow and identify what concept is currently being discussed or taught. This should be the main subject matter of the most recent exchanges.
 
 Examples of good responses:
 - "checkers board setup"
@@ -1061,6 +1059,9 @@ Respond with ONLY the specific concept/topic (2-8 words). No explanations, no qu
         except Exception as e:
             logger.error(f"Error identifying topic with LLM: {e}", exc_info=True)
             video_topic = "the current subject"
+
+        # Build user message with the identified topic
+        user_message = f"🎥 Show me a video on the {video_topic}"
 
     # Add user message to conversation
     db.add_message(session_id, "user", user_message)
