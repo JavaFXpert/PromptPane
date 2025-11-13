@@ -18,7 +18,10 @@
       "WebFetch(domain:monsterui.answer.ai)",
       "Bash(sqlite3:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:daisyui.com)"
+      "WebFetch(domain:daisyui.com)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(timeout 5 python3:*)"
     ],
     "deny": [],
     "ask": []

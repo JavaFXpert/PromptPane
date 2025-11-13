@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_updated": "2025-11-12T15:39:44.571336+00:00",
+  "last_updated": "2025-11-13T13:23:12.660163+00:00",
   "entities": [
     {
       "id": 1,
@@ -11,8 +11,8 @@
       "confidence": 1.0,
       "relevance_score": 1.0,
       "created_at": "2025-11-06T03:54:52.268524+00:00",
-      "last_mentioned": "2025-11-12T13:55:00Z",
-      "mention_count": 25,
+      "last_mentioned": "2025-11-13T13:30:00Z",
+      "mention_count": 27,
       "birthdate": "1955-04-19",
       "gender": "male"
     },
@@ -68,7 +68,7 @@
       "confidence": 0.9,
       "relevance_score": 1.0,
       "created_at": "2025-11-06T03:59:22.698269+00:00",
-      "last_mentioned": "2025-11-08T22:30:00Z",
+      "last_mentioned": "2025-11-13T13:30:00Z",
       "mention_count": 18,
       "birthdate": "1995-08-22",
       "gender": "female"
@@ -210,6 +210,154 @@
       "created_at": "2025-11-12T14:30:00Z",
       "last_mentioned": "2025-11-12T15:30:00Z",
       "mention_count": 4
+    },
+    {
+      "id": 19,
+      "entity_type": "preference",
+      "name": "Fitness activity",
+      "value": "sandbag training",
+      "description": "User is working out with a sandbag (non‑duffel style) as part of fitness routine",
+      "confidence": 0.95,
+      "relevance_score": 0.9,
+      "created_at": "2025-11-12T16:10:00Z",
+      "last_mentioned": "2025-11-12T17:00:00Z",
+      "mention_count": 6,
+      "category": "fitness",
+      "strength": "moderate"
+    },
+    {
+      "id": 20,
+      "entity_type": "learning_path",
+      "name": "SCUBA Dive",
+      "value": "project",
+      "description": "SCUBA Dive learning path",
+      "confidence": 0.95,
+      "relevance_score": 0.9,
+      "created_at": "2025-11-13T13:00:00Z",
+      "last_mentioned": "2025-11-13T13:00:00Z",
+      "mention_count": 1
+    },
+    {
+      "id": 21,
+      "entity_type": "learning_path",
+      "name": "Kite Flying",
+      "value": "project",
+      "description": "Learning path for kite flying covering launch, landing, and control maneuvers",
+      "confidence": 0.95,
+      "relevance_score": 0.9,
+      "created_at": "2025-11-13T13:30:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 5
+    },
+    {
+      "id": 22,
+      "entity_type": "fact",
+      "name": "Kite steering techniques practiced",
+      "value": "turn, side_pull",
+      "description": "User has practiced turning the line and side‑pulling as kite steering techniques",
+      "confidence": 0.95,
+      "relevance_score": 1.0,
+      "created_at": "2025-11-13T13:45:00Z",
+      "last_mentioned": "2025-11-13T14:00:00Z",
+      "mention_count": 2,
+      "category": "hobby",
+      "verified": true
+    },
+    {
+      "id": 23,
+      "entity_type": "fact",
+      "name": "Kite flying technique preferences",
+      "value": "taut, gentle, wind",
+      "description": "User prefers kite line to be taut, uses gentle side‑pulls, and positions wind at the back for figure‑eight maneuvers",
+      "confidence": 0.95,
+      "relevance_score": 1.0,
+      "created_at": "2025-11-13T13:55:00Z",
+      "last_mentioned": "2025-11-13T14:00:00Z",
+      "mention_count": 2,
+      "category": "hobby",
+      "verified": true
+    },
+    {
+      "id": 24,
+      "entity_type": "fact",
+      "name": "Advanced kite trick identification",
+      "value": "Double Loop",
+      "description": "User correctly identified Double Loop as an advanced kite trick",
+      "confidence": 0.95,
+      "relevance_score": 0.8,
+      "created_at": "2025-11-13T14:00:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 2,
+      "category": "hobby",
+      "verified": true
+    },
+    {
+      "id": 25,
+      "entity_type": "fact",
+      "name": "Spiral Dive",
+      "value": "Spiral Dive",
+      "description": "Advanced kite trick involving a tight descending spiral that requires precise line control",
+      "confidence": 0.95,
+      "relevance_score": 0.8,
+      "created_at": "2025-11-13T14:05:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 1,
+      "category": "hobby",
+      "verified": false
+    },
+    {
+      "id": 26,
+      "entity_type": "fact",
+      "name": "Reverse Figure Eight",
+      "value": "Reverse Figure Eight",
+      "description": "Advanced kite maneuver flying the figure‑eight in the opposite direction",
+      "confidence": 0.95,
+      "relevance_score": 0.8,
+      "created_at": "2025-11-13T14:05:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 1,
+      "category": "hobby",
+      "verified": false
+    },
+    {
+      "id": 27,
+      "entity_type": "fact",
+      "name": "Side Pull Hover",
+      "value": "Side Pull Hover",
+      "description": "Advanced kite maneuver holding the kite nearly stationary while using side‑pulls to keep it aloft",
+      "confidence": 0.95,
+      "relevance_score": 0.8,
+      "created_at": "2025-11-13T14:05:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 1,
+      "category": "hobby",
+      "verified": false
+    },
+    {
+      "id": 28,
+      "entity_type": "fact",
+      "name": "Figure Eight (basic)",
+      "value": "Figure Eight",
+      "description": "Basic kite maneuver consisting of a standard figure‑eight pattern",
+      "confidence": 0.95,
+      "relevance_score": 0.8,
+      "created_at": "2025-11-13T14:05:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 1,
+      "category": "hobby",
+      "verified": true
+    },
+    {
+      "id": 29,
+      "entity_type": "learning_path",
+      "name": "Advanced Kite Flying Techniques",
+      "value": "project",
+      "description": "Learning path for advanced kite flying tricks such as Double Loop, Spiral Dive, Reverse Figure Eight, Side Pull Hover",
+      "confidence": 0.9,
+      "relevance_score": 0.8,
+      "created_at": "2025-11-13T14:05:00Z",
+      "last_mentioned": "2025-11-13T14:05:00Z",
+      "mention_count": 1
     }
   ],
   "relationships": [
@@ -419,6 +567,42 @@
       "description": "studying the Book of Ephesians",
       "confidence": 0.9,
       "created_at": "2025-11-12T14:30:00Z"
+    },
+    {
+      "id": 24,
+      "entity1_id": 1,
+      "entity2_id": 19,
+      "relationship_type": "interest",
+      "description": "interest in sandbag training",
+      "confidence": 0.9,
+      "created_at": "2025-11-12T16:10:00Z"
+    },
+    {
+      "id": 25,
+      "entity1_id": 1,
+      "entity2_id": 20,
+      "relationship_type": "interest",
+      "description": "studying SCUBA diving",
+      "confidence": 0.9,
+      "created_at": "2025-11-13T13:00:00Z"
+    },
+    {
+      "id": 26,
+      "entity1_id": 1,
+      "entity2_id": 21,
+      "relationship_type": "interest",
+      "description": "interest in kite flying",
+      "confidence": 0.95,
+      "created_at": "2025-11-13T13:30:00Z"
+    },
+    {
+      "id": 27,
+      "entity1_id": 1,
+      "entity2_id": 29,
+      "relationship_type": "interest",
+      "description": "interest in advanced kite flying techniques",
+      "confidence": 0.9,
+      "created_at": "2025-11-13T14:05:00Z"
     }
   ]
 }

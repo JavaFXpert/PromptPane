@@ -1,279 +1,279 @@
 {
   "version": "1.0",
   "created_at": "2025-11-11T00:00:00Z",
-  "last_updated": "2025-11-12T15:40:00.865658+00:00",
+  "last_updated": "2025-11-13T13:23:13.650684+00:00",
   "active_objective": {
     "id": 1,
-    "title": "Learn Book of 1st John",
-    "description": "Master the fundamentals and advanced concepts of Book of 1st John",
-    "mastery_level": "mastered",
+    "title": "Learn Flying a Kite",
+    "description": "Master the fundamentals and advanced concepts of flying a kite",
+    "mastery_level": "practiced",
     "parent_id": null,
     "children": [
       {
         "id": 2,
-        "title": "Introduction to 1st John",
-        "description": "Understand the context, purpose, and overview of the Book of 1st John",
-        "mastery_level": "mastered",
-        "parent_id": 1,
-        "children": [
-          {
-            "id": 3,
-            "title": "Historical Context",
-            "description": "Learn about the author, audience, and time period of 1st John",
-            "mastery_level": "mastered",
-            "parent_id": 2,
-            "children": [
-              {
-                "id": 4,
-                "title": "Authorship and Audience",
-                "description": "Identify the author and intended audience of 1st John",
-                "mastery_level": "practiced",
-                "parent_id": 3,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989190+00:00",
-                "last_updated": "2025-11-12T14:44:48.715190+00:00",
-                "practice_count": 7,
-                "notes": ""
-              },
-              {
-                "id": 5,
-                "title": "Historical Background",
-                "description": "Understand the social, religious, and cultural context of 1st John",
-                "mastery_level": "practiced",
-                "parent_id": 3,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989229+00:00",
-                "last_updated": "2025-11-12T15:32:08.369742+00:00",
-                "practice_count": 3,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-12T14:33:03.989239+00:00",
-            "last_updated": "2025-11-12T15:31:47.173804+00:00",
-            "practice_count": 5,
-            "notes": ""
-          },
-          {
-            "id": 6,
-            "title": "Purpose and Overview",
-            "description": "Understand the main themes and purpose of 1st John",
-            "mastery_level": "mastered",
-            "parent_id": 2,
-            "children": [
-              {
-                "id": 7,
-                "title": "Main Themes",
-                "description": "Identify the key themes of fellowship, obedience, and assurance in 1st John",
-                "mastery_level": "mastered",
-                "parent_id": 6,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989247+00:00",
-                "last_updated": "2025-11-12T15:40:00.864249+00:00",
-                "practice_count": 7,
-                "notes": ""
-              },
-              {
-                "id": 8,
-                "title": "Book Overview",
-                "description": "Understand the structure and content of the Book of 1st John",
-                "mastery_level": "mastered",
-                "parent_id": 6,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989254+00:00",
-                "last_updated": "2025-11-12T15:34:52.430806+00:00",
-                "practice_count": 5,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-12T14:33:03.989261+00:00",
-            "last_updated": "2025-11-12T15:33:48.619849+00:00",
-            "practice_count": 3,
-            "notes": ""
-          }
-        ],
-        "created_at": "2025-11-12T14:33:03.989268+00:00",
-        "last_updated": "2025-11-12T15:39:54.602276+00:00",
-        "practice_count": 8,
-        "notes": ""
-      },
-      {
-        "id": 9,
-        "title": "Doctrine and Theology",
-        "description": "Master the theological concepts and doctrines in 1st John",
+        "title": "Introduction to Kite Flying",
+        "description": "Understand the basics and motivation for flying a kite",
         "mastery_level": "practiced",
         "parent_id": 1,
         "children": [
           {
+            "id": 3,
+            "title": "Kite Flying Basics",
+            "description": "Learn the essential components and types of kites",
+            "mastery_level": "practiced",
+            "parent_id": 2,
+            "children": [
+              {
+                "id": 4,
+                "title": "Assemble a Kite",
+                "description": "Practice assembling a basic kite",
+                "mastery_level": "practiced",
+                "parent_id": 3,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156803+00:00",
+                "last_updated": "2025-11-13T13:16:59.978119+00:00",
+                "practice_count": 5,
+                "notes": ""
+              },
+              {
+                "id": 5,
+                "title": "Understand Wind Conditions",
+                "description": "Learn to assess and utilize wind for kite flying",
+                "mastery_level": "practiced",
+                "parent_id": 3,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156832+00:00",
+                "last_updated": "2025-11-13T13:15:33.901143+00:00",
+                "practice_count": 4,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-13T13:13:21.156837+00:00",
+            "last_updated": "2025-11-13T13:15:33.901015+00:00",
+            "practice_count": 4,
+            "notes": ""
+          },
+          {
+            "id": 6,
+            "title": "Safety and Ethics",
+            "description": "Understand safety precautions and ethical considerations",
+            "mastery_level": "practiced",
+            "parent_id": 2,
+            "children": [
+              {
+                "id": 7,
+                "title": "Kite Flying Regulations",
+                "description": "Learn about local laws and regulations",
+                "mastery_level": "not_started",
+                "parent_id": 6,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156843+00:00",
+                "last_updated": "2025-11-13T13:13:21.156845+00:00",
+                "practice_count": 0,
+                "notes": ""
+              },
+              {
+                "id": 8,
+                "title": "Avoiding Hazards",
+                "description": "Practice identifying and avoiding common hazards",
+                "mastery_level": "not_started",
+                "parent_id": 6,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156848+00:00",
+                "last_updated": "2025-11-13T13:13:21.156849+00:00",
+                "practice_count": 0,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-13T13:13:21.156851+00:00",
+            "last_updated": "2025-11-13T13:16:23.125821+00:00",
+            "practice_count": 4,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-13T13:13:21.156856+00:00",
+        "last_updated": "2025-11-13T13:14:53.781202+00:00",
+        "practice_count": 4,
+        "notes": ""
+      },
+      {
+        "id": 9,
+        "title": "Mastering Kite Flight",
+        "description": "Develop skills for controlling and maneuvering a kite",
+        "mastery_level": "mastered",
+        "parent_id": 1,
+        "children": [
+          {
             "id": 10,
-            "title": "Christology",
-            "description": "Understand the doctrine of Christ in 1st John",
+            "title": "Launching and Landing",
+            "description": "Master the techniques for launching and landing a kite safely",
             "mastery_level": "mastered",
             "parent_id": 9,
             "children": [
               {
                 "id": 11,
-                "title": "Jesus as Messiah",
-                "description": "Learn about Jesus as the Messiah and Son of God in 1st John",
+                "title": "Launch a Kite",
+                "description": "Practice launching a kite in various wind conditions",
                 "mastery_level": "mastered",
                 "parent_id": 10,
                 "children": [],
-                "created_at": "2025-11-12T14:33:03.989275+00:00",
-                "last_updated": "2025-11-12T15:20:07.608339+00:00",
-                "practice_count": 7,
-                "notes": ""
-              },
-              {
-                "id": 12,
-                "title": "Jesus as Savior",
-                "description": "Understand Jesus' role as Savior in 1st John",
-                "mastery_level": "mastered",
-                "parent_id": 10,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989282+00:00",
-                "last_updated": "2025-11-12T15:38:25.208389+00:00",
-                "practice_count": 8,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-12T14:33:03.989288+00:00",
-            "last_updated": "2025-11-12T15:20:07.608456+00:00",
-            "practice_count": 6,
-            "notes": ""
-          },
-          {
-            "id": 13,
-            "title": "Soteriology",
-            "description": "Understand the doctrine of salvation in 1st John",
-            "mastery_level": "practiced",
-            "parent_id": 9,
-            "children": [
-              {
-                "id": 14,
-                "title": "Assurance of Salvation",
-                "description": "Learn about the assurance of salvation in 1st John",
-                "mastery_level": "mastered",
-                "parent_id": 13,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989295+00:00",
-                "last_updated": "2025-11-12T15:20:07.608084+00:00",
-                "practice_count": 9,
-                "notes": ""
-              },
-              {
-                "id": 15,
-                "title": "Eternal Life",
-                "description": "Understand the concept of eternal life in 1st John",
-                "mastery_level": "mastered",
-                "parent_id": 13,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989303+00:00",
-                "last_updated": "2025-11-12T15:40:00.864476+00:00",
-                "practice_count": 9,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-12T14:33:03.989310+00:00",
-            "last_updated": "2025-11-12T15:19:47.500003+00:00",
-            "practice_count": 4,
-            "notes": ""
-          }
-        ],
-        "created_at": "2025-11-12T14:33:03.989316+00:00",
-        "last_updated": "2025-11-12T14:57:10.783119+00:00",
-        "practice_count": 2,
-        "notes": ""
-      },
-      {
-        "id": 16,
-        "title": "Practical Application",
-        "description": "Apply the teachings of 1st John to everyday life",
-        "mastery_level": "mastered",
-        "parent_id": 1,
-        "children": [
-          {
-            "id": 17,
-            "title": "Fellowship and Community",
-            "description": "Learn to apply the principles of fellowship and community in 1st John",
-            "mastery_level": "mastered",
-            "parent_id": 16,
-            "children": [
-              {
-                "id": 18,
-                "title": "Walking in the Light",
-                "description": "Understand the importance of walking in the light and loving one another",
-                "mastery_level": "mastered",
-                "parent_id": 17,
-                "children": [],
-                "created_at": "2025-11-12T14:33:03.989323+00:00",
-                "last_updated": "2025-11-12T15:40:00.864576+00:00",
+                "created_at": "2025-11-13T13:13:21.156861+00:00",
+                "last_updated": "2025-11-13T13:20:40.189800+00:00",
                 "practice_count": 6,
                 "notes": ""
               },
               {
-                "id": 19,
-                "title": "Confession and Forgiveness",
-                "description": "Learn about the importance of confession and forgiveness in 1st John",
-                "mastery_level": "practiced",
-                "parent_id": 17,
+                "id": 12,
+                "title": "Land a Kite",
+                "description": "Learn to land a kite safely and controlled",
+                "mastery_level": "mastered",
+                "parent_id": 10,
                 "children": [],
-                "created_at": "2025-11-12T14:33:03.989329+00:00",
-                "last_updated": "2025-11-12T15:23:44.860733+00:00",
-                "practice_count": 5,
+                "created_at": "2025-11-13T13:13:21.156864+00:00",
+                "last_updated": "2025-11-13T13:20:54.526206+00:00",
+                "practice_count": 6,
                 "notes": ""
               }
             ],
-            "created_at": "2025-11-12T14:33:03.989335+00:00",
-            "last_updated": "2025-11-12T15:39:54.601757+00:00",
-            "practice_count": 5,
+            "created_at": "2025-11-13T13:13:21.156868+00:00",
+            "last_updated": "2025-11-13T13:20:40.189547+00:00",
+            "practice_count": 8,
             "notes": ""
           },
           {
-            "id": 20,
-            "title": "Obedience and Sanctification",
-            "description": "Apply the teachings of obedience and sanctification in 1st John",
+            "id": 13,
+            "title": "Kite Control and Maneuvers",
+            "description": "Learn to control the kite's altitude, direction, and speed",
+            "mastery_level": "mastered",
+            "parent_id": 9,
+            "children": [
+              {
+                "id": 14,
+                "title": "Adjusting Altitude",
+                "description": "Practice adjusting the kite's height",
+                "mastery_level": "mastered",
+                "parent_id": 13,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156878+00:00",
+                "last_updated": "2025-11-13T13:21:40.800094+00:00",
+                "practice_count": 7,
+                "notes": ""
+              },
+              {
+                "id": 15,
+                "title": "Changing Direction",
+                "description": "Learn to change the kite's direction smoothly",
+                "mastery_level": "mastered",
+                "parent_id": 13,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156882+00:00",
+                "last_updated": "2025-11-13T13:22:33.383503+00:00",
+                "practice_count": 8,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-13T13:13:21.156887+00:00",
+            "last_updated": "2025-11-13T13:22:33.383360+00:00",
+            "practice_count": 6,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-13T13:13:21.156894+00:00",
+        "last_updated": "2025-11-13T13:22:33.382196+00:00",
+        "practice_count": 6,
+        "notes": ""
+      },
+      {
+        "id": 16,
+        "title": "Advanced Kite Flying Techniques",
+        "description": "Explore advanced techniques for experienced kite flyers",
+        "mastery_level": "learning",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 17,
+            "title": "Aerial Stunts and Tricks",
+            "description": "Learn to perform basic aerial stunts and tricks",
             "mastery_level": "practiced",
             "parent_id": 16,
             "children": [
               {
+                "id": 18,
+                "title": "Looping the Kite",
+                "description": "Practice performing a loop with the kite",
+                "mastery_level": "mastered",
+                "parent_id": 17,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156899+00:00",
+                "last_updated": "2025-11-13T13:23:13.650107+00:00",
+                "practice_count": 4,
+                "notes": ""
+              },
+              {
+                "id": 19,
+                "title": "Figure-Eights",
+                "description": "Master flying the kite in figure-eight patterns",
+                "mastery_level": "mastered",
+                "parent_id": 17,
+                "children": [],
+                "created_at": "2025-11-13T13:13:21.156903+00:00",
+                "last_updated": "2025-11-13T13:23:13.650040+00:00",
+                "practice_count": 4,
+                "notes": ""
+              }
+            ],
+            "created_at": "2025-11-13T13:13:21.156907+00:00",
+            "last_updated": "2025-11-13T13:23:13.649857+00:00",
+            "practice_count": 2,
+            "notes": ""
+          },
+          {
+            "id": 20,
+            "title": "Kite Design and Customization",
+            "description": "Understand how to design and customize kites for specific flying styles",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [
+              {
                 "id": 21,
-                "title": "Keeping God's Commandments",
-                "description": "Understand the importance of keeping God's commandments in 1st John",
-                "mastery_level": "practiced",
+                "title": "Designing a Kite",
+                "description": "Learn the principles of kite design",
+                "mastery_level": "not_started",
                 "parent_id": 20,
                 "children": [],
-                "created_at": "2025-11-12T14:33:03.989342+00:00",
-                "last_updated": "2025-11-12T15:16:32.008717+00:00",
-                "practice_count": 5,
+                "created_at": "2025-11-13T13:13:21.156911+00:00",
+                "last_updated": "2025-11-13T13:13:21.156913+00:00",
+                "practice_count": 0,
                 "notes": ""
               },
               {
                 "id": 22,
-                "title": "Overcoming Sin",
-                "description": "Learn about overcoming sin and living a righteous life in 1st John",
-                "mastery_level": "mastered",
+                "title": "Customizing a Kite",
+                "description": "Practice modifying a kite for improved performance",
+                "mastery_level": "not_started",
                 "parent_id": 20,
                 "children": [],
-                "created_at": "2025-11-12T14:33:03.989348+00:00",
-                "last_updated": "2025-11-12T15:24:03.094264+00:00",
-                "practice_count": 5,
+                "created_at": "2025-11-13T13:13:21.156915+00:00",
+                "last_updated": "2025-11-13T13:13:21.156917+00:00",
+                "practice_count": 0,
                 "notes": ""
               }
             ],
-            "created_at": "2025-11-12T14:33:03.989354+00:00",
-            "last_updated": "2025-11-12T15:14:46.743878+00:00",
-            "practice_count": 3,
+            "created_at": "2025-11-13T13:13:21.156919+00:00",
+            "last_updated": "2025-11-13T13:13:21.156924+00:00",
+            "practice_count": 0,
             "notes": ""
           }
         ],
-        "created_at": "2025-11-12T14:33:03.989360+00:00",
-        "last_updated": "2025-11-12T15:39:54.601484+00:00",
-        "practice_count": 4,
+        "created_at": "2025-11-13T13:13:21.156926+00:00",
+        "last_updated": "2025-11-13T13:23:13.650153+00:00",
+        "practice_count": 1,
         "notes": ""
       }
     ],
-    "created_at": "2025-11-12T14:33:03.989366+00:00",
-    "last_updated": "2025-11-12T15:39:45.151539+00:00",
-    "practice_count": 8,
+    "created_at": "2025-11-13T13:13:21.156930+00:00",
+    "last_updated": "2025-11-13T13:14:53.781278+00:00",
+    "practice_count": 4,
     "notes": ""
   }
 }
