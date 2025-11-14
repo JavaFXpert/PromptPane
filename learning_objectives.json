@@ -1,279 +1,311 @@
 {
   "version": "1.0",
   "created_at": "2025-11-11T00:00:00Z",
-  "last_updated": "2025-11-13T13:23:13.650684+00:00",
+  "last_updated": "2025-11-14T12:35:48.956699+00:00",
   "active_objective": {
     "id": 1,
-    "title": "Learn Flying a Kite",
-    "description": "Master the fundamentals and advanced concepts of flying a kite",
-    "mastery_level": "practiced",
+    "title": "Learn Tic-Tac-Toe",
+    "description": "Master the fundamentals and advanced concepts of playing Tic-Tac-Toe",
+    "mastery_level": "learning",
     "parent_id": null,
     "children": [
       {
         "id": 2,
-        "title": "Introduction to Kite Flying",
-        "description": "Understand the basics and motivation for flying a kite",
-        "mastery_level": "practiced",
-        "parent_id": 1,
-        "children": [
-          {
-            "id": 3,
-            "title": "Kite Flying Basics",
-            "description": "Learn the essential components and types of kites",
-            "mastery_level": "practiced",
-            "parent_id": 2,
-            "children": [
-              {
-                "id": 4,
-                "title": "Assemble a Kite",
-                "description": "Practice assembling a basic kite",
-                "mastery_level": "practiced",
-                "parent_id": 3,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156803+00:00",
-                "last_updated": "2025-11-13T13:16:59.978119+00:00",
-                "practice_count": 5,
-                "notes": ""
-              },
-              {
-                "id": 5,
-                "title": "Understand Wind Conditions",
-                "description": "Learn to assess and utilize wind for kite flying",
-                "mastery_level": "practiced",
-                "parent_id": 3,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156832+00:00",
-                "last_updated": "2025-11-13T13:15:33.901143+00:00",
-                "practice_count": 4,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-13T13:13:21.156837+00:00",
-            "last_updated": "2025-11-13T13:15:33.901015+00:00",
-            "practice_count": 4,
-            "notes": ""
-          },
-          {
-            "id": 6,
-            "title": "Safety and Ethics",
-            "description": "Understand safety precautions and ethical considerations",
-            "mastery_level": "practiced",
-            "parent_id": 2,
-            "children": [
-              {
-                "id": 7,
-                "title": "Kite Flying Regulations",
-                "description": "Learn about local laws and regulations",
-                "mastery_level": "not_started",
-                "parent_id": 6,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156843+00:00",
-                "last_updated": "2025-11-13T13:13:21.156845+00:00",
-                "practice_count": 0,
-                "notes": ""
-              },
-              {
-                "id": 8,
-                "title": "Avoiding Hazards",
-                "description": "Practice identifying and avoiding common hazards",
-                "mastery_level": "not_started",
-                "parent_id": 6,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156848+00:00",
-                "last_updated": "2025-11-13T13:13:21.156849+00:00",
-                "practice_count": 0,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-13T13:13:21.156851+00:00",
-            "last_updated": "2025-11-13T13:16:23.125821+00:00",
-            "practice_count": 4,
-            "notes": ""
-          }
-        ],
-        "created_at": "2025-11-13T13:13:21.156856+00:00",
-        "last_updated": "2025-11-13T13:14:53.781202+00:00",
-        "practice_count": 4,
-        "notes": ""
-      },
-      {
-        "id": 9,
-        "title": "Mastering Kite Flight",
-        "description": "Develop skills for controlling and maneuvering a kite",
-        "mastery_level": "mastered",
-        "parent_id": 1,
-        "children": [
-          {
-            "id": 10,
-            "title": "Launching and Landing",
-            "description": "Master the techniques for launching and landing a kite safely",
-            "mastery_level": "mastered",
-            "parent_id": 9,
-            "children": [
-              {
-                "id": 11,
-                "title": "Launch a Kite",
-                "description": "Practice launching a kite in various wind conditions",
-                "mastery_level": "mastered",
-                "parent_id": 10,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156861+00:00",
-                "last_updated": "2025-11-13T13:20:40.189800+00:00",
-                "practice_count": 6,
-                "notes": ""
-              },
-              {
-                "id": 12,
-                "title": "Land a Kite",
-                "description": "Learn to land a kite safely and controlled",
-                "mastery_level": "mastered",
-                "parent_id": 10,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156864+00:00",
-                "last_updated": "2025-11-13T13:20:54.526206+00:00",
-                "practice_count": 6,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-13T13:13:21.156868+00:00",
-            "last_updated": "2025-11-13T13:20:40.189547+00:00",
-            "practice_count": 8,
-            "notes": ""
-          },
-          {
-            "id": 13,
-            "title": "Kite Control and Maneuvers",
-            "description": "Learn to control the kite's altitude, direction, and speed",
-            "mastery_level": "mastered",
-            "parent_id": 9,
-            "children": [
-              {
-                "id": 14,
-                "title": "Adjusting Altitude",
-                "description": "Practice adjusting the kite's height",
-                "mastery_level": "mastered",
-                "parent_id": 13,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156878+00:00",
-                "last_updated": "2025-11-13T13:21:40.800094+00:00",
-                "practice_count": 7,
-                "notes": ""
-              },
-              {
-                "id": 15,
-                "title": "Changing Direction",
-                "description": "Learn to change the kite's direction smoothly",
-                "mastery_level": "mastered",
-                "parent_id": 13,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156882+00:00",
-                "last_updated": "2025-11-13T13:22:33.383503+00:00",
-                "practice_count": 8,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-13T13:13:21.156887+00:00",
-            "last_updated": "2025-11-13T13:22:33.383360+00:00",
-            "practice_count": 6,
-            "notes": ""
-          }
-        ],
-        "created_at": "2025-11-13T13:13:21.156894+00:00",
-        "last_updated": "2025-11-13T13:22:33.382196+00:00",
-        "practice_count": 6,
-        "notes": ""
-      },
-      {
-        "id": 16,
-        "title": "Advanced Kite Flying Techniques",
-        "description": "Explore advanced techniques for experienced kite flyers",
+        "title": "Introduction to Tic-Tac-Toe",
+        "description": "Understand the basics of the game, its history, and objectives",
         "mastery_level": "learning",
         "parent_id": 1,
         "children": [
           {
-            "id": 17,
-            "title": "Aerial Stunts and Tricks",
-            "description": "Learn to perform basic aerial stunts and tricks",
+            "id": 3,
+            "title": "Game Overview",
+            "description": "Learn the rules, setup, and winning conditions",
             "mastery_level": "practiced",
-            "parent_id": 16,
-            "children": [
-              {
-                "id": 18,
-                "title": "Looping the Kite",
-                "description": "Practice performing a loop with the kite",
-                "mastery_level": "mastered",
-                "parent_id": 17,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156899+00:00",
-                "last_updated": "2025-11-13T13:23:13.650107+00:00",
-                "practice_count": 4,
-                "notes": ""
-              },
-              {
-                "id": 19,
-                "title": "Figure-Eights",
-                "description": "Master flying the kite in figure-eight patterns",
-                "mastery_level": "mastered",
-                "parent_id": 17,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156903+00:00",
-                "last_updated": "2025-11-13T13:23:13.650040+00:00",
-                "practice_count": 4,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-13T13:13:21.156907+00:00",
-            "last_updated": "2025-11-13T13:23:13.649857+00:00",
-            "practice_count": 2,
+            "parent_id": 2,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534137+00:00",
+            "last_updated": "2025-11-14T12:32:55.907771+00:00",
+            "practice_count": 5,
             "notes": ""
           },
           {
-            "id": 20,
-            "title": "Kite Design and Customization",
-            "description": "Understand how to design and customize kites for specific flying styles",
+            "id": 4,
+            "title": "History of Tic-Tac-Toe",
+            "description": "Discover the origins and evolution of the game",
+            "mastery_level": "practiced",
+            "parent_id": 2,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534320+00:00",
+            "last_updated": "2025-11-14T12:33:32.862425+00:00",
+            "practice_count": 5,
+            "notes": ""
+          },
+          {
+            "id": 5,
+            "title": "Game Objectives",
+            "description": "Understand the primary goals and strategies for playing",
+            "mastery_level": "practiced",
+            "parent_id": 2,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534354+00:00",
+            "last_updated": "2025-11-14T12:34:15.052141+00:00",
+            "practice_count": 5,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-14T12:30:19.534363+00:00",
+        "last_updated": "2025-11-14T12:31:22.811358+00:00",
+        "practice_count": 3,
+        "notes": ""
+      },
+      {
+        "id": 6,
+        "title": "Basic Strategies",
+        "description": "Learn fundamental tactics for playing Tic-Tac-Toe",
+        "mastery_level": "practiced",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 7,
+            "title": "Understanding the Board",
+            "description": "Recognize the layout and key positions on the board",
             "mastery_level": "not_started",
-            "parent_id": 16,
-            "children": [
-              {
-                "id": 21,
-                "title": "Designing a Kite",
-                "description": "Learn the principles of kite design",
-                "mastery_level": "not_started",
-                "parent_id": 20,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156911+00:00",
-                "last_updated": "2025-11-13T13:13:21.156913+00:00",
-                "practice_count": 0,
-                "notes": ""
-              },
-              {
-                "id": 22,
-                "title": "Customizing a Kite",
-                "description": "Practice modifying a kite for improved performance",
-                "mastery_level": "not_started",
-                "parent_id": 20,
-                "children": [],
-                "created_at": "2025-11-13T13:13:21.156915+00:00",
-                "last_updated": "2025-11-13T13:13:21.156917+00:00",
-                "practice_count": 0,
-                "notes": ""
-              }
-            ],
-            "created_at": "2025-11-13T13:13:21.156919+00:00",
-            "last_updated": "2025-11-13T13:13:21.156924+00:00",
+            "parent_id": 6,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534371+00:00",
+            "last_updated": "2025-11-14T12:30:19.534374+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 8,
+            "title": "Controlling the Center",
+            "description": "Learn the importance of the center square and how to utilize it",
+            "mastery_level": "practiced",
+            "parent_id": 6,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534379+00:00",
+            "last_updated": "2025-11-14T12:35:48.955192+00:00",
+            "practice_count": 3,
+            "notes": ""
+          },
+          {
+            "id": 9,
+            "title": "Blocking and Tackling",
+            "description": "Master the art of blocking opponent's moves and creating opportunities",
+            "mastery_level": "practiced",
+            "parent_id": 6,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534466+00:00",
+            "last_updated": "2025-11-14T12:35:48.955487+00:00",
+            "practice_count": 3,
+            "notes": ""
+          },
+          {
+            "id": 10,
+            "title": "Basic Opening Moves",
+            "description": "Discover effective starting moves to gain an advantage",
+            "mastery_level": "learning",
+            "parent_id": 6,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534476+00:00",
+            "last_updated": "2025-11-14T12:35:48.955656+00:00",
+            "practice_count": 2,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-14T12:30:19.534484+00:00",
+        "last_updated": "2025-11-14T12:35:02.915428+00:00",
+        "practice_count": 4,
+        "notes": ""
+      },
+      {
+        "id": 11,
+        "title": "Advanced Strategies",
+        "description": "Delve into complex tactics and techniques for expert play",
+        "mastery_level": "not_started",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 12,
+            "title": "Forking and Pinning",
+            "description": "Learn to create multiple threats and limit opponent's options",
+            "mastery_level": "not_started",
+            "parent_id": 11,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534492+00:00",
+            "last_updated": "2025-11-14T12:30:19.534495+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 13,
+            "title": "Advanced Opening Theories",
+            "description": "Explore in-depth strategies for the opening game",
+            "mastery_level": "not_started",
+            "parent_id": 11,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534500+00:00",
+            "last_updated": "2025-11-14T12:30:19.534503+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 14,
+            "title": "Middle Game Tactics",
+            "description": "Master the art of transitioning from the opening to the endgame",
+            "mastery_level": "not_started",
+            "parent_id": 11,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534508+00:00",
+            "last_updated": "2025-11-14T12:30:19.534510+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 15,
+            "title": "Endgame Strategies",
+            "description": "Learn to close out games effectively and convert advantages into wins",
+            "mastery_level": "not_started",
+            "parent_id": 11,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534514+00:00",
+            "last_updated": "2025-11-14T12:30:19.534517+00:00",
             "practice_count": 0,
             "notes": ""
           }
         ],
-        "created_at": "2025-11-13T13:13:21.156926+00:00",
-        "last_updated": "2025-11-13T13:23:13.650153+00:00",
-        "practice_count": 1,
+        "created_at": "2025-11-14T12:30:19.534520+00:00",
+        "last_updated": "2025-11-14T12:30:19.534523+00:00",
+        "practice_count": 0,
+        "notes": ""
+      },
+      {
+        "id": 16,
+        "title": "Practical Application",
+        "description": "Apply theoretical knowledge through hands-on practice and real-world scenarios",
+        "mastery_level": "not_started",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 17,
+            "title": "Playing Against Different Opponents",
+            "description": "Learn to adapt strategies to different playing styles and strengths",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534529+00:00",
+            "last_updated": "2025-11-14T12:30:19.534531+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 18,
+            "title": "Analyzing Games",
+            "description": "Develop the skill to review and learn from games, identifying mistakes and areas for improvement",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534536+00:00",
+            "last_updated": "2025-11-14T12:30:19.534539+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 19,
+            "title": "Time Management and Pressure",
+            "description": "Practice playing under time constraints and managing game pressure",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534544+00:00",
+            "last_updated": "2025-11-14T12:30:19.534546+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 20,
+            "title": "Common Mistakes and Pitfalls",
+            "description": "Identify and learn to avoid common errors that can cost games",
+            "mastery_level": "not_started",
+            "parent_id": 16,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534551+00:00",
+            "last_updated": "2025-11-14T12:30:19.534553+00:00",
+            "practice_count": 0,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-14T12:30:19.534557+00:00",
+        "last_updated": "2025-11-14T12:30:19.534560+00:00",
+        "practice_count": 0,
+        "notes": ""
+      },
+      {
+        "id": 21,
+        "title": "Mastering Tic-Tac-Toe",
+        "description": "Achieve expertise through comprehensive review and advanced techniques",
+        "mastery_level": "not_started",
+        "parent_id": 1,
+        "children": [
+          {
+            "id": 22,
+            "title": "Reviewing Fundamental Concepts",
+            "description": "Reinforce understanding of basic strategies and tactics",
+            "mastery_level": "not_started",
+            "parent_id": 21,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534564+00:00",
+            "last_updated": "2025-11-14T12:30:19.534567+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 23,
+            "title": "Advanced Techniques and Theories",
+            "description": "Explore cutting-edge strategies and concepts in Tic-Tac-Toe",
+            "mastery_level": "not_started",
+            "parent_id": 21,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534571+00:00",
+            "last_updated": "2025-11-14T12:30:19.534574+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 24,
+            "title": "Creating Original Strategies",
+            "description": "Learn to develop innovative tactics and approaches",
+            "mastery_level": "not_started",
+            "parent_id": 21,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534578+00:00",
+            "last_updated": "2025-11-14T12:30:19.534581+00:00",
+            "practice_count": 0,
+            "notes": ""
+          },
+          {
+            "id": 25,
+            "title": "Competitive Play",
+            "description": "Prepare for tournament play and competitive environments",
+            "mastery_level": "not_started",
+            "parent_id": 21,
+            "children": [],
+            "created_at": "2025-11-14T12:30:19.534585+00:00",
+            "last_updated": "2025-11-14T12:30:19.534588+00:00",
+            "practice_count": 0,
+            "notes": ""
+          }
+        ],
+        "created_at": "2025-11-14T12:30:19.534592+00:00",
+        "last_updated": "2025-11-14T12:30:19.534594+00:00",
+        "practice_count": 0,
         "notes": ""
       }
     ],
-    "created_at": "2025-11-13T13:13:21.156930+00:00",
-    "last_updated": "2025-11-13T13:14:53.781278+00:00",
-    "practice_count": 4,
+    "created_at": "2025-11-14T12:30:19.534598+00:00",
+    "last_updated": "2025-11-14T12:31:22.811075+00:00",
+    "practice_count": 3,
     "notes": ""
   }
 }

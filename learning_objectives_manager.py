@@ -288,6 +288,16 @@ def decompose_objective_with_llm(
 Topic: {title}
 Description: {description}
 
+CRITICAL - COMPREHENSIVE COVERAGE:
+Before creating the hierarchy, conduct a thorough analysis:
+1. **Breadth-First Thinking**: What are ALL the major areas within this topic? Don't leave gaps.
+2. **Expert Curriculum**: What would a comprehensive university course or professional certification cover?
+3. **Real-World Application**: What skills does a practitioner actually need in the real world?
+4. **Common Omissions**: What do incomplete learning paths typically miss? Include those areas.
+5. **Depth Requirements**: Each major area needs sufficient sub-topics - don't compress too much into single objectives.
+
+Your goal is COMPLETE mastery, not just surface coverage. Each parent should decompose into ALL necessary children - don't artificially limit yourself to 2-3 children when 6-8 are needed for thorough coverage.
+
 IMPORTANT: Before generating the JSON, think deeply about:
 1. **Prerequisites & Dependencies**: What foundational knowledge is needed before advanced topics?
 2. **Learning Progression**: How should concepts build upon each other naturally?
@@ -305,7 +315,10 @@ PEDAGOGICAL PRINCIPLES:
 
 STRUCTURE REQUIREMENTS:
 - Root objective: The main topic
-- Each objective: 3-7 carefully chosen sub-objectives
+- Each parent objective: Break into AS MANY children as needed for complete coverage
+  * Do NOT artificially limit the number of children - create as many as required to fully decompose the topic
+  * Aim for thoroughness: It's better to have 8-10 well-defined sub-objectives than to squeeze everything into 3
+  * Each parent should typically have 4-10 children depending on topic complexity
 - Maximum depth: 4 levels (root + 3 levels of children)
 - Leaf objectives: Atomic and achievable in a single focused lesson (20-60 minutes)
 - Each objective needs:
@@ -313,6 +326,17 @@ STRUCTURE REQUIREMENTS:
   * description: Clear learning outcome with action verbs (1-2 sentences)
 
 First, mentally map out the learning journey from absolute beginner to proficient practitioner. Consider what a learner needs to know at each stage and how to sequence topics for maximum retention and understanding.
+
+COMPLETENESS CHECKLIST:
+Before generating JSON, verify you have:
+✓ Identified ALL major sub-topics, not just the obvious ones
+✓ Created 4-10 children per parent where appropriate (not just 2-3)
+✓ Covered theory, practice, common pitfalls, and advanced applications
+✓ Ensured a learner who completes this tree would truly master the topic
+✓ Included real-world application examples and hands-on skills
+✓ Not artificially limited yourself to small numbers of children
+
+If you answered "no" to any of these, expand your decomposition before proceeding.
 
 Then, return ONLY valid JSON in this exact format (no markdown, no code blocks, no explanatory text):
 {{
@@ -339,14 +363,14 @@ Then, return ONLY valid JSON in this exact format (no markdown, no code blocks, 
   ]
 }}
 
-Now create a thoughtful, well-structured learning path:"""
+Now create a comprehensive, thorough, well-structured learning path:"""
 
     try:
         response = client.chat.completions.create(
             messages=[{"role": "system", "content": prompt}],
             model="llama-3.3-70b-versatile",
-            temperature=0.3,
-            max_tokens=15000
+            temperature=0.4,
+            max_tokens=25000
         )
 
         response_text = response.choices[0].message.content.strip()
